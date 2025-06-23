@@ -1,25 +1,28 @@
 import 'package:flutter/material.dart';
 import '../models/game_state.dart';
+import '../models/network_message.dart';
 
-class VictoryDialog extends StatefulWidget {
+class OnlineVictoryDialog extends StatefulWidget {
   final GameStatus gameStatus;
-  final bool isAiMode;
+  final Player? mySymbol;
+  final PlayerInfo? winner;
   final VoidCallback onPlayAgain;
-  final VoidCallback onChangeMode;
+  final VoidCallback onLeaveRoom;
 
-  const VictoryDialog({
+  const OnlineVictoryDialog({
     super.key,
     required this.gameStatus,
-    required this.isAiMode,
+    this.mySymbol,
+    this.winner,
     required this.onPlayAgain,
-    required this.onChangeMode,
+    required this.onLeaveRoom,
   });
 
   @override
-  State<VictoryDialog> createState() => _VictoryDialogState();
+  State<OnlineVictoryDialog> createState() => _OnlineVictoryDialogState();
 }
 
-class _VictoryDialogState extends State<VictoryDialog>
+class _OnlineVictoryDialogState extends State<OnlineVictoryDialog>
     with TickerProviderStateMixin {
   late AnimationController _scaleController;
   late AnimationController _rotationController;
@@ -133,10 +136,10 @@ class _VictoryDialogState extends State<VictoryDialog>
                     child: OutlinedButton.icon(
                       onPressed: () {
                         Navigator.of(context).pop();
-                        widget.onChangeMode();
+                        widget.onLeaveRoom();
                       },
-                      icon: Icon(_getModeIcon()),
-                      label: Text(_getModeButtonText()),
+                      icon: const Icon(Icons.exit_to_app),
+                      label: const Text('离开房间'),
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(
@@ -176,11 +179,19 @@ class _VictoryDialogState extends State<VictoryDialog>
   }
 
   String _getTitle() {
+    final isIWinner = _isIWinner();
+
     switch (widget.gameStatus) {
       case GameStatus.xWins:
+        if (isIWinner != null) {
+          return isIWinner ? '🎉 您获胜了！' : '😢 您失败了';
+        }
         return '🎉 玩家 × 获胜！';
       case GameStatus.oWins:
-        return widget.isAiMode ? '🤖 AI 获胜！' : '🎉 玩家 ○ 获胜！';
+        if (isIWinner != null) {
+          return isIWinner ? '🎉 您获胜了！' : '😢 您失败了';
+        }
+        return '🎉 玩家 ○ 获胜！';
       case GameStatus.draw:
         return '🤝 平局！';
       default:
@@ -189,16 +200,22 @@ class _VictoryDialogState extends State<VictoryDialog>
   }
 
   String _getSubtitle() {
-    switch (widget.gameStatus) {
-      case GameStatus.xWins:
-        return '恭喜你赢得了这局游戏！';
-      case GameStatus.oWins:
-        return widget.isAiMode ? '别灰心，再试一次吧！' : '恭喜获胜者！';
-      case GameStatus.draw:
-        return '势均力敌，不分胜负！';
-      default:
-        return '';
+    final isIWinner = _isIWinner();
+
+    if (widget.gameStatus == GameStatus.draw) {
+      return '势均力敌，不分胜负！';
     }
+
+    if (isIWinner != null) {
+      if (isIWinner) {
+        return '恭喜您在在线对战中获胜！';
+      } else {
+        return '别灰心，再来一局吧！';
+      }
+    }
+
+    final winnerName = widget.winner?.playerName ?? '获胜者';
+    return '恭喜 $winnerName 获得胜利！';
   }
 
   IconData _getStatusIcon() {
@@ -214,13 +231,23 @@ class _VictoryDialogState extends State<VictoryDialog>
   }
 
   Color _getStatusColor() {
+    final isIWinner = _isIWinner();
+
+    // 如果能确定是否是我赢了，使用通用的胜负颜色
+    if (isIWinner != null) {
+      if (isIWinner) {
+        return Colors.green.shade600; // 我赢了 - 绿色（成功色）
+      } else {
+        return Colors.red.shade600; // 我输了 - 红色（失败色）
+      }
+    }
+
+    // 如果无法确定胜负关系，使用游戏状态对应的颜色
     switch (widget.gameStatus) {
       case GameStatus.xWins:
         return Colors.blue.shade600; // X获胜 - 蓝色
       case GameStatus.oWins:
-        return widget.isAiMode
-            ? Colors.orange.shade600
-            : Colors.red.shade600; // O获胜 - AI橙色/玩家红色
+        return Colors.orange.shade600; // O获胜 - 橙色
       case GameStatus.draw:
         return Colors.amber.shade600; // 平局 - 琥珀色（中性色）
       default:
@@ -228,11 +255,18 @@ class _VictoryDialogState extends State<VictoryDialog>
     }
   }
 
-  IconData _getModeIcon() {
-    return widget.isAiMode ? Icons.people : Icons.smart_toy;
-  }
+  bool? _isIWinner() {
+    if (widget.mySymbol == null) return null;
 
-  String _getModeButtonText() {
-    return widget.isAiMode ? '双人对战' : 'VS AI';
+    switch (widget.gameStatus) {
+      case GameStatus.xWins:
+        return widget.mySymbol == Player.x;
+      case GameStatus.oWins:
+        return widget.mySymbol == Player.o;
+      case GameStatus.draw:
+        return null; // 平局不分胜负
+      default:
+        return null;
+    }
   }
 }

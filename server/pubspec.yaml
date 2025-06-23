@@ -1,0 +1,30 @@
+name: frog_game_server
+description: 青蛙跳井游戏在线对战服务器
+version: 1.0.0
+
+environment:
+  sdk: ^3.8.0
+
+dependencies:
+  # Web 服务器框架
+  shelf: ^1.4.1
+  shelf_web_socket: ^1.0.4
+  shelf_router: ^1.1.4
+  shelf_cors_headers: ^0.1.5
+  
+  # JSON 处理
+  dart_jsonwebtoken: ^2.12.1
+  
+  # 日志
+  logging: ^1.2.0
+  
+  # 不可变数据类
+  freezed_annotation: ^2.4.1
+  json_annotation: ^4.8.1
+
+dev_dependencies:
+  # 代码生成
+  build_runner: ^2.4.7
+  freezed: ^2.4.7
+  json_serializable: ^6.7.1
+  lints: ^3.0.0 

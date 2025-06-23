@@ -4,12 +4,28 @@ import '../models/game_state.dart';
 import '../providers/game_provider.dart';
 
 class GameBoard extends ConsumerWidget {
-  const GameBoard({super.key});
+  final GameState? gameState;
+  final Function(int)? onCellTap;
+  final bool isOnlineMode;
+  final bool isMyTurn;
+
+  const GameBoard({
+    super.key,
+    this.gameState,
+    this.onCellTap,
+    this.isOnlineMode = false,
+    this.isMyTurn = true,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final gameState = ref.watch(gameProvider);
+    final currentGameState = gameState ?? ref.watch(gameProvider);
     final gameNotifier = ref.read(gameProvider.notifier);
+
+    // Ensure we have a valid game state
+    if (currentGameState == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
 
     return Container(
       decoration: BoxDecoration(
@@ -37,10 +53,20 @@ class GameBoard extends ConsumerWidget {
               ),
               itemCount: 9,
               itemBuilder: (context, index) {
+                final canTap = isOnlineMode
+                    ? (isMyTurn && currentGameState.canMakeMove(index))
+                    : currentGameState.canMakeMove(index);
+
+                final tapHandler = isOnlineMode
+                    ? () => onCellTap?.call(index)
+                    : () => gameNotifier.makeMove(index);
+
                 return GameCell(
-                  player: gameState.board[index],
-                  onTap: () => gameNotifier.makeMove(index),
-                  canTap: gameState.canMakeMove(index),
+                  player: currentGameState.board[index],
+                  onTap: tapHandler,
+                  canTap: canTap,
+                  isMyTurn: isMyTurn,
+                  isOnlineMode: isOnlineMode,
                 );
               },
             ),
@@ -55,12 +81,16 @@ class GameCell extends StatelessWidget {
   final Player? player;
   final VoidCallback onTap;
   final bool canTap;
+  final bool isMyTurn;
+  final bool isOnlineMode;
 
   const GameCell({
     super.key,
     required this.player,
     required this.onTap,
     required this.canTap,
+    this.isMyTurn = true,
+    this.isOnlineMode = false,
   });
 
   @override
@@ -89,6 +119,9 @@ class GameCell extends StatelessWidget {
 
   Color _getCellColor() {
     if (player == null) {
+      if (isOnlineMode && !isMyTurn) {
+        return Colors.grey.shade200;
+      }
       return canTap ? Colors.grey.shade50 : Colors.grey.shade100;
     }
     return player == Player.x ? Colors.blue.shade50 : Colors.red.shade50;

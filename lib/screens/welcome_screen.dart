@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/game_provider.dart';
+import '../config/app_config.dart';
 import 'game_screen.dart';
+import 'online_lobby_screen.dart';
 
 class WelcomeScreen extends ConsumerWidget {
   const WelcomeScreen({super.key});
@@ -147,10 +149,10 @@ class WelcomeScreen extends ConsumerWidget {
           ref: ref,
           icon: Icons.wifi,
           title: '🌐 在线对战',
-          subtitle: '即将推出，敬请期待',
+          subtitle: '与全球玩家实时对战',
           color: Colors.purple.shade600,
-          onTap: () => _showComingSoon(context),
-          enabled: false,
+          onTap: () => _goToOnlineLobby(context),
+          enabled: true,
         ),
       ],
     );
@@ -163,9 +165,9 @@ class WelcomeScreen extends ConsumerWidget {
         color: Colors.white.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(20),
       ),
-      child: const Text(
-        'Version 1.0.0',
-        style: TextStyle(
+      child: Text(
+        'Version ${AppConfig.appVersion}',
+        style: const TextStyle(
           color: Colors.white,
           fontSize: 12,
           fontWeight: FontWeight.w500,
@@ -279,20 +281,9 @@ class WelcomeScreen extends ConsumerWidget {
     );
   }
 
-  void _showComingSoon(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-        title: const Text('🚀 即将推出'),
-        content: const Text('在线对战功能正在开发中，敬请期待！'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('确定'),
-          ),
-        ],
-      ),
-    );
+  void _goToOnlineLobby(BuildContext context) {
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (context) => const OnlineLobbyScreen()));
   }
 }

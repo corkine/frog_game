@@ -40,6 +40,8 @@ dependencies:
   freezed_annotation: ^2.4.1
   # JSON序列化
   json_annotation: ^4.8.1
+  # WebSocket 和 HTTP 客户端
+  web_socket_channel: ^2.4.0
 
 dev_dependencies:
   flutter_test:

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/game_state.dart';
 import '../screens/welcome_screen.dart';
+import '../screens/online_lobby_screen.dart';
 
 class GameMenu extends StatelessWidget {
   final GameState gameState;
@@ -100,10 +101,17 @@ class GameMenu extends StatelessWidget {
           _buildMenuItem(
             icon: Icons.wifi,
             title: '在线对战',
-            subtitle: '即将推出',
+            subtitle: '与全球玩家实时对战',
             color: Colors.purple.shade600,
-            onTap: () => _showComingSoon(context),
-            enabled: false,
+            onTap: () {
+              Navigator.of(context).pop();
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const OnlineLobbyScreen(),
+                ),
+              );
+            },
+            enabled: true,
           ),
 
           _buildDivider(),
@@ -206,24 +214,6 @@ class GameMenu extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Divider(height: 1, color: Colors.grey.shade200),
-    );
-  }
-
-  void _showComingSoon(BuildContext context) {
-    Navigator.of(context).pop();
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-        title: const Text('🚀 即将推出'),
-        content: const Text('在线对战功能正在开发中，敬请期待！'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('确定'),
-          ),
-        ],
-      ),
     );
   }
 }

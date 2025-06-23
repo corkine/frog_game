@@ -27,8 +27,12 @@ mixin _$GameState {
   bool get isAiMode => throw _privateConstructorUsedError;
   bool get isPlayerXHuman => throw _privateConstructorUsedError;
 
+  /// Serializes this GameState to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
-  @JsonKey(ignore: true)
+
+  /// Create a copy of GameState
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   $GameStateCopyWith<GameState> get copyWith =>
       throw _privateConstructorUsedError;
 }
@@ -57,6 +61,8 @@ class _$GameStateCopyWithImpl<$Res, $Val extends GameState>
   // ignore: unused_field
   final $Res Function($Val) _then;
 
+  /// Create a copy of GameState
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -121,6 +127,8 @@ class __$$GameStateImplCopyWithImpl<$Res>
     $Res Function(_$GameStateImpl) _then,
   ) : super(_value, _then);
 
+  /// Create a copy of GameState
+  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -223,7 +231,7 @@ class _$GameStateImpl implements _GameState {
                 other.isPlayerXHuman == isPlayerXHuman));
   }
 
-  @JsonKey(ignore: true)
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode => Object.hash(
     runtimeType,
@@ -234,7 +242,9 @@ class _$GameStateImpl implements _GameState {
     isPlayerXHuman,
   );
 
-  @JsonKey(ignore: true)
+  /// Create a copy of GameState
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
   _$$GameStateImplCopyWith<_$GameStateImpl> get copyWith =>
@@ -268,8 +278,11 @@ abstract class _GameState implements GameState {
   bool get isAiMode;
   @override
   bool get isPlayerXHuman;
+
+  /// Create a copy of GameState
+  /// with the given fields replaced by the non-null parameter values.
   @override
-  @JsonKey(ignore: true)
+  @JsonKey(includeFromJson: false, includeToJson: false)
   _$$GameStateImplCopyWith<_$GameStateImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }
