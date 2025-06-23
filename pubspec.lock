@@ -435,6 +435,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.5.0"
+  random_name_generator:
+    dependency: "direct main"
+    description:
+      name: random_name_generator
+      sha256: "7c5b91d60f68b30e7b4c53006047cab8474f06563f7d0cab70fb409a0cb5ff61"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.5.0"
   riverpod:
     dependency: transitive
     description:

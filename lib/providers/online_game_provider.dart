@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/game_state.dart';
 import '../models/network_message.dart';
 import '../services/websocket_service.dart';
+import 'package:random_name_generator/random_name_generator.dart';
 
 /// 在线游戏状态
 class OnlineGameState {
@@ -14,6 +15,7 @@ class OnlineGameState {
   final PlayerInfo? currentPlayer;
   final Player? mySymbol;
   final bool isMyTurn;
+  final bool isJoiningRoom;
 
   const OnlineGameState({
     required this.gameState,
@@ -24,6 +26,7 @@ class OnlineGameState {
     this.currentPlayer,
     this.mySymbol,
     required this.isMyTurn,
+    this.isJoiningRoom = false,
   });
 
   OnlineGameState copyWith({
@@ -35,16 +38,24 @@ class OnlineGameState {
     PlayerInfo? currentPlayer,
     Player? mySymbol,
     bool? isMyTurn,
+    bool? isJoiningRoom,
+    bool clearRoomInfo = false,
+    bool clearError = false,
+    bool clearCurrentPlayer = false,
+    bool clearMySymbol = false,
   }) {
     return OnlineGameState(
       gameState: gameState ?? this.gameState,
-      roomInfo: roomInfo ?? this.roomInfo,
+      roomInfo: clearRoomInfo ? null : roomInfo ?? this.roomInfo,
       isConnected: isConnected ?? this.isConnected,
       isConnecting: isConnecting ?? this.isConnecting,
-      error: error ?? this.error,
-      currentPlayer: currentPlayer ?? this.currentPlayer,
-      mySymbol: mySymbol ?? this.mySymbol,
+      error: clearError ? null : error ?? this.error,
+      currentPlayer: clearCurrentPlayer
+          ? null
+          : currentPlayer ?? this.currentPlayer,
+      mySymbol: clearMySymbol ? null : mySymbol ?? this.mySymbol,
       isMyTurn: isMyTurn ?? this.isMyTurn,
+      isJoiningRoom: isJoiningRoom ?? this.isJoiningRoom,
     );
   }
 }
@@ -57,11 +68,12 @@ class OnlineGameNotifier extends StateNotifier<OnlineGameState> {
 
   OnlineGameNotifier()
     : super(
-        OnlineGameState(
-          gameState: const GameState(),
+        const OnlineGameState(
+          gameState: GameState(),
           isConnected: false,
           isConnecting: false,
           isMyTurn: false,
+          isJoiningRoom: false,
         ),
       ) {
     _setupSubscriptions();
@@ -82,7 +94,7 @@ class OnlineGameNotifier extends StateNotifier<OnlineGameState> {
   Future<bool> connect({String? serverUrl}) async {
     // 避免在 widget 构建期间立即修改状态
     await Future.microtask(() {
-      state = state.copyWith(isConnecting: true, error: null);
+      state = state.copyWith(isConnecting: true, clearError: true);
     });
 
     final success = await _webSocketService.connect(serverUrl: serverUrl);
@@ -95,8 +107,8 @@ class OnlineGameNotifier extends StateNotifier<OnlineGameState> {
   /// 断开连接
   Future<void> disconnect() async {
     await _webSocketService.disconnect();
-    state = OnlineGameState(
-      gameState: const GameState(),
+    state = const OnlineGameState(
+      gameState: GameState(),
       isConnected: false,
       isConnecting: false,
       isMyTurn: false,
@@ -106,13 +118,31 @@ class OnlineGameNotifier extends StateNotifier<OnlineGameState> {
   /// 创建房间
   Future<void> createRoom(String playerName) async {
     if (!state.isConnected) return;
-    await _webSocketService.createRoom(playerName);
+    var finalPlayerName = playerName;
+    if (finalPlayerName.isEmpty) {
+      finalPlayerName = RandomNames(Zone.us).name();
+    }
+    await _webSocketService.createRoom(finalPlayerName);
   }
 
   /// 加入房间
   Future<void> joinRoom(String roomId, String playerName) async {
     if (!state.isConnected) return;
-    await _webSocketService.joinRoom(roomId, playerName);
+    var finalPlayerName = playerName;
+    if (finalPlayerName.isEmpty) {
+      finalPlayerName = RandomNames(Zone.us).name();
+    }
+    await Future.microtask(() {
+      state = state.copyWith(isJoiningRoom: true, clearError: true);
+    });
+    await _webSocketService.joinRoom(roomId, finalPlayerName);
+
+    // 添加超时机制
+    Timer(const Duration(seconds: 5), () {
+      if (state.isJoiningRoom) {
+        state = state.copyWith(isJoiningRoom: false, error: '加入房间超时');
+      }
+    });
   }
 
   /// 离开房间
@@ -124,12 +154,13 @@ class OnlineGameNotifier extends StateNotifier<OnlineGameState> {
       if (state.roomInfo != null) {
         // 如果3秒后仍然在房间中，强制清除状态
         state = state.copyWith(
-          roomInfo: null,
-          currentPlayer: null,
-          mySymbol: null,
+          clearRoomInfo: true,
+          clearCurrentPlayer: true,
+          clearMySymbol: true,
           gameState: const GameState(),
           isMyTurn: false,
-          error: null,
+          isJoiningRoom: false,
+          clearError: true,
         );
       }
     });
@@ -224,7 +255,11 @@ class OnlineGameNotifier extends StateNotifier<OnlineGameState> {
         isMyTurn:
             (roomInfo.gameState?.currentPlayer ?? Player.x) ==
             myPlayer.playerSymbol,
+        isJoiningRoom: false,
+        clearError: true,
       );
+    } else {
+      state = state.copyWith(isJoiningRoom: false, error: '加入房间失败：无效数据');
     }
   }
 
@@ -232,12 +267,13 @@ class OnlineGameNotifier extends StateNotifier<OnlineGameState> {
   void _handleRoomLeft(NetworkMessage message) {
     // 清除房间相关状态
     state = state.copyWith(
-      roomInfo: null,
-      currentPlayer: null,
-      mySymbol: null,
+      clearRoomInfo: true,
+      clearCurrentPlayer: true,
+      clearMySymbol: true,
       gameState: const GameState(),
       isMyTurn: false,
-      error: null, // 清除任何错误信息
+      isJoiningRoom: false,
+      clearError: true,
     );
   }
 
@@ -320,7 +356,11 @@ class OnlineGameNotifier extends StateNotifier<OnlineGameState> {
 
   /// 处理服务器错误
   void _handleServerError(NetworkMessage message) {
-    state = state.copyWith(error: message.error);
+    state = state.copyWith(
+      error: message.error,
+      isConnecting: false,
+      isJoiningRoom: false,
+    );
   }
 
   /// 处理连接状态变化
@@ -329,22 +369,28 @@ class OnlineGameNotifier extends StateNotifier<OnlineGameState> {
 
     if (!connected) {
       state = state.copyWith(
-        roomInfo: null,
+        clearRoomInfo: true,
+        clearCurrentPlayer: true,
+        clearMySymbol: true,
         gameState: const GameState(),
-        mySymbol: null,
         isMyTurn: false,
+        isJoiningRoom: false,
       );
     }
   }
 
   /// 处理错误
   void _handleError(String error) {
-    state = state.copyWith(error: error, isConnecting: false);
+    state = state.copyWith(
+      error: error,
+      isConnecting: false,
+      isJoiningRoom: false,
+    );
   }
 
   /// 清除错误
   void clearError() {
-    state = state.copyWith(error: null);
+    state = state.copyWith(clearError: true);
   }
 
   @override

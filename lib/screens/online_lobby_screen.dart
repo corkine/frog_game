@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../config/app_config.dart';
 import '../providers/online_game_provider.dart';
 import 'online_game_screen.dart';
+import 'package:random_name_generator/random_name_generator.dart';
 
 class OnlineLobbyScreen extends ConsumerStatefulWidget {
   const OnlineLobbyScreen({super.key});
@@ -20,6 +21,8 @@ class _OnlineLobbyScreenState extends ConsumerState<OnlineLobbyScreen> {
   @override
   void initState() {
     super.initState();
+    // 自动为玩家生成一个随机名字
+    _playerNameController.text = RandomNames(Zone.us).name();
     // 监听文本变化以更新按钮状态
     _playerNameController.addListener(() => setState(() {}));
     _roomIdController.addListener(() => setState(() {}));
