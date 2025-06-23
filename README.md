@@ -75,8 +75,8 @@ flutter pub get
 # 3. 生成代码
 flutter pub run build_runner build
 
-# 4. 运行应用
-flutter run
+# 4. 运行应用，不提供则使用默认 devServerUrl
+flutter run --dart-define=SERVER_URL=ws://your-server.com/
 ```
 
 ### 服务器开发
@@ -97,100 +97,19 @@ dart pub run build_runner build
 
 服务器将在 `http://localhost:8080` 启动。
 
-## 🐳 Docker 部署
-
-### 构建镜像
+### 服务端部署
 
 ```bash
 cd server
-
-# 构建Docker镜像
-docker build -t frog-game-server .
-
-# 运行容器
-docker run -p 8080:8080 frog-game-server
+docker build -t corkine/frog-game:0.0.1 .
+docker run -p 8080:8080 corkine/frog-game:0.0.1
 ```
 
-### 使用部署脚本
+### 客户端部署
 
 ```bash
-cd server
-
-# 给予执行权限
-chmod +x deploy.sh
-
-# 构建镜像
-./deploy.sh build
-
-# 推送到阿里云容器镜像服务
-export NAMESPACE=your-namespace
-./deploy.sh push
-
-# 完整部署流程
-./deploy.sh all
-```
-
-## ☁️ 阿里云函数计算部署
-
-### 准备工作
-
-1. 创建阿里云容器镜像服务仓库
-2. 安装 Serverless Devs 工具
-
-```bash
-npm install -g @serverless-devs/s
-```
-
-### 部署步骤
-
-1. **推送镜像到阿里云**
-
-```bash
-# 登录阿里云容器镜像服务
-docker login registry.cn-hangzhou.aliyuncs.com
-
-# 设置环境变量
-export NAMESPACE=your-namespace
-
-# 构建并推送
-cd server
-./deploy.sh build
-./deploy.sh push
-```
-
-2. **更新部署模板**
-
-修改 `server/template.yml` 中的镜像地址：
-
-```yaml
-CustomContainerConfig:
-  Image: registry.cn-hangzhou.aliyuncs.com/your-namespace/frog-game-server:latest
-```
-
-3. **部署到函数计算**
-
-```bash
-s deploy
-```
-
-## 🔧 配置说明
-
-### 环境变量
-
-| 变量名 | 说明 | 默认值 |
-|--------|------|--------|
-| `PORT` | 服务器端口 | `8080` |
-| `REGISTRY_URL` | 容器镜像仓库地址 | `registry.cn-hangzhou.aliyuncs.com` |
-| `NAMESPACE` | 镜像命名空间 | `default` |
-| `IMAGE_NAME` | 镜像名称 | `frog-game-server` |
-| `IMAGE_TAG` | 镜像标签 | `latest` |
-
-### 客户端配置
-
-在 `lib/services/websocket_service.dart` 中修改服务器地址：
-
-```dart
-static const String defaultServerUrl = 'ws://your-server-domain/ws';
+flutter build macos --release
+flutter build web --release --base-href=/frog/
 ```
 
 ## 📡 API 文档

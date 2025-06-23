@@ -34,6 +34,15 @@ class _OnlineLobbyScreenState extends ConsumerState<OnlineLobbyScreen> {
     super.dispose();
   }
 
+  /// 清理当前状态（例如用户点击返回主菜单时）
+  void _cleanupState() {
+    // 如果当前在房间中，先离开房间
+    final onlineState = ref.read(onlineGameProvider);
+    if (onlineState.roomInfo != null) {
+      ref.read(onlineGameProvider.notifier).leaveRoom();
+    }
+  }
+
   /// 连接到服务器
   Future<void> _connectToServer() async {
     setState(() => _isConnecting = true);
@@ -52,10 +61,21 @@ class _OnlineLobbyScreenState extends ConsumerState<OnlineLobbyScreen> {
   Widget build(BuildContext context) {
     final onlineState = ref.watch(onlineGameProvider);
 
+    // 检查是否已经在房间中，如果是则直接跳转到游戏屏幕
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (onlineState.roomInfo != null && onlineState.currentPlayer != null) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => const OnlineGameScreen()),
+        );
+      }
+    });
+
     // 监听状态变化
     ref.listen<OnlineGameState>(onlineGameProvider, (previous, next) {
       // 房间创建或加入成功，进入游戏
-      if (next.roomInfo != null && next.currentPlayer != null) {
+      if (previous?.roomInfo == null &&
+          next.roomInfo != null &&
+          next.currentPlayer != null) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (context) => const OnlineGameScreen()),
         );
@@ -420,7 +440,10 @@ class _OnlineLobbyScreenState extends ConsumerState<OnlineLobbyScreen> {
     return SizedBox(
       width: double.infinity,
       child: OutlinedButton(
-        onPressed: () => Navigator.of(context).pop(),
+        onPressed: () {
+          _cleanupState();
+          Navigator.of(context).pop();
+        },
         style: OutlinedButton.styleFrom(
           padding: const EdgeInsets.symmetric(vertical: 16),
           shape: RoundedRectangleBorder(

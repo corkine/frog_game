@@ -118,12 +118,21 @@ class OnlineGameNotifier extends StateNotifier<OnlineGameState> {
   /// 离开房间
   Future<void> leaveRoom() async {
     await _webSocketService.leaveRoom();
-    state = state.copyWith(
-      roomInfo: null,
-      gameState: const GameState(),
-      mySymbol: null,
-      isMyTurn: false,
-    );
+
+    // 添加超时机制，如果3秒内没有收到服务器确认，强制清除状态
+    Timer(const Duration(seconds: 3), () {
+      if (state.roomInfo != null) {
+        // 如果3秒后仍然在房间中，强制清除状态
+        state = state.copyWith(
+          roomInfo: null,
+          currentPlayer: null,
+          mySymbol: null,
+          gameState: const GameState(),
+          isMyTurn: false,
+          error: null,
+        );
+      }
+    });
   }
 
   /// 发送游戏移动
@@ -150,6 +159,9 @@ class OnlineGameNotifier extends StateNotifier<OnlineGameState> {
         break;
       case MessageType.roomJoined:
         _handleRoomJoined(message);
+        break;
+      case MessageType.roomLeft:
+        _handleRoomLeft(message);
         break;
       case MessageType.playerJoined:
         _handlePlayerJoined(message);
@@ -214,6 +226,19 @@ class OnlineGameNotifier extends StateNotifier<OnlineGameState> {
             myPlayer.playerSymbol,
       );
     }
+  }
+
+  /// 处理离开房间成功
+  void _handleRoomLeft(NetworkMessage message) {
+    // 清除房间相关状态
+    state = state.copyWith(
+      roomInfo: null,
+      currentPlayer: null,
+      mySymbol: null,
+      gameState: const GameState(),
+      isMyTurn: false,
+      error: null, // 清除任何错误信息
+    );
   }
 
   /// 处理玩家加入

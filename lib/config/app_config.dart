@@ -1,13 +1,10 @@
 /// 应用程序配置类
 class AppConfig {
   /// 开发环境配置
-  static const String devServerUrl = 'ws://localhost:8080/ws';
+  static const String devServerUrl = 'wss://frogme.mazhangjing.com/ws';
 
   /// 生产环境配置 - 替换为您的实际服务器地址
-  static const String prodServerUrl = 'wss://your-server-domain.com/ws';
-
-  /// 测试环境配置
-  static const String testServerUrl = 'ws://test-server.com/ws';
+  static const String prodServerUrl = 'wss://frogme.mazhangjing.com/ws';
 
   /// 当前环境
   static const bool isDebug = bool.fromEnvironment('dart.vm.product') == false;
