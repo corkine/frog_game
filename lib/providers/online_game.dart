@@ -308,7 +308,7 @@ class OnlineGame extends _$OnlineGame {
           mySymbol: me.playerSymbol,
           isJoiningRoom: false,
           error: null,
-          gameState: GameState.fromJson(message.data!['gameState']),
+          gameState: roomInfo.gameState ?? const GameState(),
         );
 
       case MessageType.roomLeft:
@@ -324,21 +324,27 @@ class OnlineGame extends _$OnlineGame {
         final roomInfo = RoomInfo.fromJson(message.data!['roomInfo']);
         return state.copyWith(
           roomInfo: roomInfo,
-          gameState: GameState.fromJson(message.data!['gameState']),
+          gameState: roomInfo.gameState ?? const GameState(),
         );
 
       case MessageType.gameUpdate:
       case MessageType.gameMove:
       case MessageType.gameReset:
       case MessageType.gameOver:
+        final newGameState = GameState.fromJson(message.data!['gameState']);
+        final newRoomInfo = message.data?['roomInfo'] != null
+            ? RoomInfo.fromJson(message.data!['roomInfo'])
+            : state.roomInfo;
         return state.copyWith(
-          gameState: GameState.fromJson(message.data!['gameState']),
-          roomInfo: RoomInfo.fromJson(message.data!['roomInfo']),
+          gameState: newGameState,
+          roomInfo: newRoomInfo,
         );
 
       case MessageType.error:
+        final errorMessage =
+            message.error ?? message.data?['message'] ?? '来自服务器的未知错误';
         return state.copyWith(
-          error: message.data?['message'] ?? '来自服务器的未知错误',
+          error: errorMessage,
           isJoiningRoom: false,
         );
 
