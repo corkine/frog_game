@@ -100,6 +100,20 @@ dart run bin/server.dart
 
 服务器将在 `http://localhost:8080` 启动。
 
+### 构建打包
+
+```bash
+# 客户端
+flutter build macos \
+    --release \
+    --dart-define=SERVER_URL=ws://your-custom-server.com/frog \
+    --dart-define=APP_VERSION=v1.0.0
+
+# 服务端
+cd server
+docker build --build-arg APP_VERSION=v1.0.0 -t corkine/frog-game:v1.0.0 .
+```
+
 ## 📡 API 文档
 
 ### WebSocket 协议

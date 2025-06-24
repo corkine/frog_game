@@ -34,7 +34,7 @@ ENV APP_VERSION=$APP_VERSION
 
 # 安装运行时依赖
 RUN apt-get update && \
-    apt-get install -y ca-certificates && \
+    apt-get install -y --no-install-recommends ca-certificates curl && \
     rm -rf /var/lib/apt/lists/*
 
 # 创建非root用户
