@@ -4,6 +4,12 @@ FROM dart:stable AS build
 # 设置工作目录
 WORKDIR /app
 
+# 声明构建参数
+ARG APP_VERSION=local-dev
+
+# 将构建参数设置为环境变量
+ENV APP_VERSION=$APP_VERSION
+
 # 复制 pubspec 文件
 COPY pubspec.* ./
 

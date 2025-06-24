@@ -10,13 +10,18 @@ import 'package:frog_game_server/services/room_manager.dart';
 import 'package:frog_game_server/handlers/websocket_handler.dart';
 
 void main(List<String> args) async {
+  // 从环境变量中获取版本号，如果未设置则提供默认值
+  final appVersion = Platform.environment['APP_VERSION'] ?? 'local-dev';
+
   // 设置日志
   Logger.root.level = Level.ALL;
   Logger.root.onRecord.listen((record) {
+    // ignore: avoid_print
     print('${record.level.name}: ${record.time}: ${record.message}');
   });
 
   final logger = Logger('Server');
+  logger.info('Starting server version: $appVersion');
 
   // 初始化服务
   final roomManager = RoomManager();
@@ -24,6 +29,11 @@ void main(List<String> args) async {
 
   // 创建路由
   final router = Router();
+
+  // 版本端点
+  router.get('/version', (Request request) {
+    return Response.ok(appVersion, headers: {'Content-Type': 'text/plain'});
+  });
 
   // 健康检查端点
   router.get('/health', (Request request) {
@@ -76,6 +86,7 @@ void main(List<String> args) async {
               <h1>🐸 青蛙跳井游戏服务器</h1>
               <div class="status">
                   <h3>✅ 服务器运行中</h3>
+                  <p>版本: $appVersion</p>
                   <p>服务器时间: ${DateTime.now().toString()}</p>
               </div>
               
@@ -83,6 +94,10 @@ void main(List<String> args) async {
               <div class="endpoint">
                   <strong>WebSocket:</strong> <span class="code">ws://localhost:8080/frog</span><br>
                   用于游戏实时通信
+              </div>
+              <div class="endpoint">
+                  <strong>版本信息:</strong> <span class="code">GET /version</span><br>
+                  获取服务器版本号
               </div>
               <div class="endpoint">
                   <strong>健康检查:</strong> <span class="code">GET /health</span><br>

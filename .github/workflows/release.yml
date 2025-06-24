@@ -1,0 +1,156 @@
+name: Release CI
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build_and_push_server:
+    name: Build and Push Server Docker Image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to Aliyun Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: registry.cn-hangzhou.aliyuncs.com
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./server
+          push: true
+          tags: registry.cn-hangzhou.aliyuncs.com/corkine/frog-game:${{ github.ref_name }}
+          build-args: |
+            APP_VERSION=${{ github.ref_name }}
+
+  build_cross_platform:
+    name: Build Flutter App for ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      # Linux-specific setup
+      - name: Install Linux build dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y ninja-build libgtk-3-dev
+
+      # Android-specific setup (on Linux runner)
+      - name: Set up Java for Android
+        if: runner.os == 'Linux'
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '11'
+
+      - name: Get Flutter dependencies
+        run: flutter pub get
+
+      - name: Run build_runner
+        run: flutter pub run build_runner build --delete-conflicting-outputs
+
+      - name: Enable desktop support
+        if: runner.os != 'Linux' # Linux is enabled by default with install
+        run: flutter config --enable-${{ runner.os == 'Windows' && 'windows' || 'macos' }}-desktop
+
+      # Build Steps
+      - name: Build Web
+        if: runner.os == 'Linux'
+        run: flutter build web --release --dart-define=APP_VERSION=${{ github.ref_name }} --dart-define=SERVER_URL=${{ secrets.SERVER_URL }}
+
+      - name: Build Linux
+        if: runner.os == 'Linux'
+        run: flutter build linux --release --dart-define=APP_VERSION=${{ github.ref_name }} --dart-define=SERVER_URL=${{ secrets.SERVER_URL }}
+
+      - name: Build Android APK
+        if: runner.os == 'Linux'
+        run: flutter build apk --release --dart-define=APP_VERSION=${{ github.ref_name }} --dart-define=SERVER_URL=${{ secrets.SERVER_URL }}
+
+      - name: Build Windows
+        if: runner.os == 'Windows'
+        run: flutter build windows --release --dart-define=APP_VERSION=${{ github.ref_name }} --dart-define=SERVER_URL=${{ secrets.SERVER_URL }}
+
+      - name: Build macOS
+        if: runner.os == 'macOS'
+        run: flutter build macos --release --dart-define=APP_VERSION=${{ github.ref_name }} --dart-define=SERVER_URL=${{ secrets.SERVER_URL }}
+
+      - name: Build iOS
+        if: runner.os == 'macOS'
+        run: flutter build ios --release --no-codesign --dart-define=APP_VERSION=${{ github.ref_name }} --dart-define=SERVER_URL=${{ secrets.SERVER_URL }}
+
+      # Packaging and Uploading Artifacts
+      - name: Package and Upload Web
+        if: runner.os == 'Linux'
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-build
+          path: build/web
+
+      - name: Package and Upload Linux
+        if: runner.os == 'Linux'
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-build
+          path: build/linux/x64/release/bundle
+
+      - name: Package and Upload Android
+        if: runner.os == 'Linux'
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+
+      - name: Package and Upload Windows
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Compress-Archive -Path build/windows/x64/runner/Release/* -DestinationPath build/windows/frog_game_windows.zip
+          
+      - name: Upload Windows Artifact
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+            name: windows-build
+            path: build/windows/frog_game_windows.zip
+
+      - name: Package and Upload macOS
+        if: runner.os == 'macOS'
+        run: |
+          ditto -c -k --sequesterRsrc --keepParent "build/macos/Build/Products/Release/frog_game.app" "frog_game_macos.zip"
+      
+      - name: Upload macOS Artifact
+        if: runner.os == 'macOS'
+        uses: actions/upload-artifact@v4
+        with:
+            name: macos-build
+            path: frog_game_macos.zip
+
+      - name: Package and Upload iOS
+        if: runner.os == 'macOS'
+        run: |
+          ditto -c -k --sequesterRsrc --keepParent "build/ios/iphoneos/Runner.app" "frog_game_ios.zip"
+          
+      - name: Upload iOS Artifact
+        if: runner.os == 'macOS'
+        uses: actions/upload-artifact@v4
+        with:
+            name: ios-build
+            path: frog_game_ios.zip 

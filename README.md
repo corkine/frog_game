@@ -74,8 +74,10 @@ flutter pub get
 # 3. 生成代码
 flutter pub run build_runner build
 
-# 4. 运行应用，不提供则使用默认 devServerUrl
-flutter run --dart-define=SERVER_URL=ws://localhost:8080/frog
+# 4. 运行应用
+# 在本地开发时，应用默认连接 ws://localhost:8080/frog
+# 如果需要连接其他服务器，请使用 --dart-define 指定 SERVER_URL
+flutter run --dart-define=SERVER_URL=ws://your-custom-server.com/frog
 ```
 
 ### 服务器开发
@@ -96,21 +98,6 @@ dart run bin/server.dart
 
 服务器将在 `http://localhost:8080` 启动。
 
-### 服务端部署
-
-```bash
-cd server
-docker build -t corkine/frog-game:0.0.2 .
-docker run -p 8080:8080 corkine/frog-game:0.0.2
-```
-
-### 客户端部署
-
-```bash
-flutter build macos --release
-flutter build web --release --base-href=/frog/
-```
-
 ## 📡 API 文档
 
 ### WebSocket 协议
@@ -118,36 +105,6 @@ flutter build web --release --base-href=/frog/
 #### 连接
 ```
 WS ws://server-domain/frog
-```
-
-#### 消息格式
-
-所有消息都遵循一个基础的JSON结构。
-
-**客户端 -> 服务器 (C→S)**
-```json
-{
-  "type": "MessageType",
-  "roomId": "123456", // 可选，取决于消息类型
-  "playerId": "player123",
-  "data": { ... }, // 可选，具体结构看消息类型
-  "timestamp": 1640995200000
-}
-```
-
-**服务器 -> 客户端 (S→C)**
-```json
-{
-  "type": "MessageType",
-  "roomId": "123456", // 可选
-  "playerId": "player123", // 可选
-  "data": { // 结构取决于消息类型
-    "roomInfo": { ... },
-    "gameState": { ... }
-    // 或 "message" 用于错误
-  },
-  "timestamp": 1640995200000
-}
 ```
 
 #### 消息类型
@@ -177,21 +134,50 @@ WS ws://server-domain/frog
 | `/` | GET | 服务器首页 |
 | `/health` | GET | 健康检查 |
 | `/stats` | GET | 服务器统计 |
+| `/version` | GET | 获取服务器版本 |
 | `/frog` | GET | WebSocket升级 |
 
+## 📦 版本管理与发布
+
+本项目的客户端和服务端版本保持严格一致，通过 Git 标签进行统一管理和自动化发布。
+
+### 版本管理策略
+
+- **版本号格式**：遵循 [语义化版本](https://semver.org/lang/zh-CN/) 规范，例如 `v1.2.3`。
+- **Git 标签**：每次发布都需要创建一个以 `v` 开头的 Git 标签，例如 `git tag v1.0.0`。
+
+### 自动化发布流程
+
+当一个 `v*` 格式的标签被推送到 GitHub 仓库时，会自动触发 `GitHub Actions` CI/CD 工作流，执行以下操作：
+
+1.  **注入版本号与配置**：
+    -   将 Git 标签（例如 `v1.0.0`）作为版本号，通过 `--dart-define=APP_VERSION=v1.0.0` 注入到 Flutter 客户端。
+    -   将生产服务器 URL 通过 `--dart-define=SERVER_URL=...` 注入到 Flutter 客户端。
+    -   将版本号通过构建参数注入到服务端的 Docker 镜像中。
+
+2.  **构建和发布服务端**：
+    -   构建 Docker 镜像。
+    -   镜像标签与 Git 标签保持一致。
+    -   推送到指定的容器镜像仓库。
+
+3.  **构建客户端**：
+    -   并行构建 Web、Android、iOS、macOS、Windows 和 Linux 的发行版本。
+    -   将所有构建产物（如 APK、ZIP 包等）上传到 GitHub Actions 的 Artifacts，方便下载。
+
+### 如何发布新版本
+
+1.  确保所有代码更改已经合并到 `main` 分支。
+2.  在本地创建并推送一个新的 Git 标签：
+    ```bash
+    # 创建一个新标签
+    git tag v1.1.0
+
+    # 推送标签到远程仓库，这将触发CI/CD
+    git push origin v1.1.0
+    ```
+3.  等待 GitHub Actions 完成所有构建和发布任务。
+
 ## 🛠️ 开发指南
-
-### 添加新功能
-
-1. **客户端**
-   - 在 `lib/models/` 中添加新的数据模型
-   - 在 `lib/providers/` 中添加状态管理
-   - 在 `lib/screens/` 和 `lib/widgets/` 中添加UI组件
-
-2. **服务器**
-   - 在 `server/lib/models/` 中添加数据模型
-   - 在 `server/lib/services/` 中添加业务逻辑
-   - 在 `server/lib/handlers/` 中添加请求处理
 
 ### 代码生成
 
@@ -206,30 +192,6 @@ cd server
 dart pub run build_runner build --delete-conflicting-outputs
 ```
 
-### 调试
-
-1. **客户端调试**
-   - 使用 Flutter DevTools
-   - 查看控制台日志
-
-2. **服务器调试**
-   - 查看服务器日志
-   - 使用 `/stats` 端点查看状态
-
-## 📋 系统要求
-
-### 客户端
-- Flutter 3.8.0+
-- Dart 3.8.0+
-
-### 服务器
-- Dart 3.8.0+
-- Docker (可选)
-
-### 部署
-- 阿里云账号
-- 容器镜像服务
-
 ## 🤝 贡献指南
 
 1. Fork 项目
@@ -240,22 +202,4 @@ dart pub run build_runner build --delete-conflicting-outputs
 
 ## 📝 许可证
 
-该项目基于 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情。
-
-## 🔗 相关链接
-
-- [Flutter 官方文档](https://flutter.dev/docs)
-- [Dart 官方文档](https://dart.dev/guides)
-- [Riverpod 状态管理](https://riverpod.dev/)
-
-## 🎮 游戏规则
-
-井字棋是一个经典的策略游戏：
-
-1. 两名玩家轮流在3×3的网格中放置标记（X和O）
-2. 第一个将三个标记连成一线（水平、垂直或对角线）的玩家获胜
-3. 如果网格填满且没有玩家获胜，则为平局
-
----
-
-**享受游戏！** 🎉
+该项目基于 MIT 许可证。

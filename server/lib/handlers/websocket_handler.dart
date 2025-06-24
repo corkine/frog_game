@@ -239,7 +239,7 @@ class WebSocketManager {
     final result = roomManager.makeMove(message.playerId!, moveData.position);
 
     switch (result) {
-      case GameMoveSuccess(:final room, :final moveData):
+      case GameMoveSuccess(:final room):
         // 广播移动给房间内所有玩家
         final gameUpdateMessage = NetworkMessage(
           type: MessageType.gameUpdate,

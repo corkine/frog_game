@@ -1,29 +1,16 @@
 /// 应用程序配置类
 class AppConfig {
-  /// 开发环境配置
-  static const String devServerUrl = 'ws://localhost:8080/frog';
-
-  /// 生产环境配置 - 替换为您的实际服务器地址
-  static const String prodServerUrl = 'wss://frogme.mazhangjing.com/frog';
+  /// 服务器URL。
+  // ignore: unintended_html_in_doc_comment
+  /// 该值通过 --dart-define=SERVER_URL=<your_url> 在编译时注入。
+  /// Flutter run/build 时若未提供，则默认为本地开发服务器。
+  static const String serverUrl = String.fromEnvironment(
+    'SERVER_URL',
+    defaultValue: 'ws://localhost:8080/frog',
+  );
 
   /// 当前环境
   static const bool isDebug = bool.fromEnvironment('dart.vm.product') == false;
-
-  /// 获取当前环境的服务器URL
-  static String get serverUrl {
-    // 优先使用环境变量配置
-    const String envServerUrl = String.fromEnvironment('SERVER_URL');
-    if (envServerUrl.isNotEmpty) {
-      return envServerUrl;
-    }
-
-    // 其次根据调试模式选择
-    if (isDebug) {
-      return devServerUrl;
-    } else {
-      return prodServerUrl;
-    }
-  }
 
   /// 游戏配置
   static const int maxPlayersPerRoom = 2;
@@ -32,5 +19,8 @@ class AppConfig {
 
   /// UI配置
   static const String appName = '青蛙跳井';
-  static const String appVersion = '1.0.1 · 由 AI 驱动开发';
+  static const String appVersion = "${String.fromEnvironment(
+    'APP_VERSION',
+    defaultValue: 'local-dev',
+  )} · 由 AI 驱动开发";
 }
