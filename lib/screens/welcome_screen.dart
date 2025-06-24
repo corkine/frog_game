@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../providers/game_provider.dart';
+import '../providers/game.dart';
 import '../config/app_config.dart';
 import 'game_screen.dart';
 import 'online_lobby_screen.dart';
@@ -20,38 +20,28 @@ class WelcomeScreen extends ConsumerWidget {
 
           // 内容
           SafeArea(
-            child: SingleChildScrollView(
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  minHeight:
-                      MediaQuery.of(context).size.height -
-                      MediaQuery.of(context).padding.top -
-                      MediaQuery.of(context).padding.bottom,
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const SizedBox(height: 40),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Spacer(),
 
-                      // 游戏标题区域
-                      _buildTitle(),
+                  // 游戏标题区域
+                  _buildTitle(),
 
-                      const SizedBox(height: 60),
+                  const Spacer(),
 
-                      // 游戏模式选择
-                      _buildGameModes(context, ref),
+                  // 游戏模式选择
+                  _buildGameModes(context, ref),
 
-                      const SizedBox(height: 40),
+                  const SizedBox(height: 10),
 
-                      // 版本信息
-                      _buildVersionInfo(),
+                  // 版本信息
+                  _buildVersionInfo(),
 
-                      const SizedBox(height: 20),
-                    ],
-                  ),
-                ),
+                  const SizedBox(height: 10),
+                ],
               ),
             ),
           ),
@@ -83,7 +73,7 @@ class WelcomeScreen extends ConsumerWidget {
           ),
         ),
 
-        const SizedBox(height: 30),
+        const SizedBox(height: 20),
 
         // 标题
         Container(
@@ -119,6 +109,7 @@ class WelcomeScreen extends ConsumerWidget {
 
   Widget _buildGameModes(BuildContext context, WidgetRef ref) {
     return Column(
+      spacing: 10,
       children: [
         _buildModeButton(
           context: context,
@@ -130,8 +121,6 @@ class WelcomeScreen extends ConsumerWidget {
           onTap: () => _startGame(context, ref, aiMode: true),
         ),
 
-        const SizedBox(height: 15),
-
         _buildModeButton(
           context: context,
           ref: ref,
@@ -141,8 +130,6 @@ class WelcomeScreen extends ConsumerWidget {
           color: Colors.orange.shade600,
           onTap: () => _startGame(context, ref, aiMode: false),
         ),
-
-        const SizedBox(height: 15),
 
         _buildModeButton(
           context: context,
@@ -192,7 +179,7 @@ class WelcomeScreen extends ConsumerWidget {
         onTap: enabled ? onTap : null,
         borderRadius: BorderRadius.circular(20),
         child: Container(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: enabled
                 ? Colors.white.withValues(alpha: 0.95)
@@ -217,8 +204,8 @@ class WelcomeScreen extends ConsumerWidget {
           child: Row(
             children: [
               Container(
-                width: 60,
-                height: 60,
+                width: 50,
+                height: 50,
                 decoration: BoxDecoration(
                   color: enabled
                       ? color.withValues(alpha: 0.15)
@@ -232,7 +219,7 @@ class WelcomeScreen extends ConsumerWidget {
                 ),
               ),
 
-              const SizedBox(width: 20),
+              const SizedBox(width: 15),
 
               Expanded(
                 child: Column(

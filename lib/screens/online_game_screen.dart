@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/network_message.dart';
-import '../providers/online_game_provider.dart';
+import '../providers/online_game.dart';
 import '../models/game_state.dart';
 import '../widgets/game_board.dart';
 import '../widgets/online_victory_dialog.dart';

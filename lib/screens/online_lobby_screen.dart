@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../config/app_config.dart';
-import '../providers/online_game_provider.dart';
-import 'online_game_screen.dart';
 import 'package:random_name_generator/random_name_generator.dart';
+
+import '../config/app_config.dart';
+import '../providers/online_game.dart';
+import 'online_game_screen.dart';
 
 class OnlineLobbyScreen extends ConsumerStatefulWidget {
   const OnlineLobbyScreen({super.key});
@@ -13,51 +14,52 @@ class OnlineLobbyScreen extends ConsumerStatefulWidget {
   ConsumerState<OnlineLobbyScreen> createState() => _OnlineLobbyScreenState();
 }
 
-class _OnlineLobbyScreenState extends ConsumerState<OnlineLobbyScreen> {
+class _OnlineLobbyScreenState extends ConsumerState<OnlineLobbyScreen>
+    with WidgetsBindingObserver {
   final _playerNameController = TextEditingController();
   final _roomIdController = TextEditingController();
-  bool _isConnecting = false;
 
   @override
   void initState() {
     super.initState();
-    // 自动为玩家生成一个随机名字
+    WidgetsBinding.instance.addObserver(this);
+
     _playerNameController.text = RandomNames(Zone.us).name();
-    // 监听文本变化以更新按钮状态
     _playerNameController.addListener(() => setState(() {}));
     _roomIdController.addListener(() => setState(() {}));
-    // 延迟连接以避免在 widget 构建期间修改 provider
-    Future(() => _connectToServer());
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _connectIfNeeded();
+    });
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _playerNameController.dispose();
     _roomIdController.dispose();
     super.dispose();
   }
 
-  /// 清理当前状态（例如用户点击返回主菜单时）
-  void _cleanupState() {
-    // 如果当前在房间中，先离开房间
-    final onlineState = ref.read(onlineGameProvider);
-    if (onlineState.roomInfo != null) {
-      ref.read(onlineGameProvider.notifier).leaveRoom();
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.resumed && mounted) {
+      // 当应用恢复时，尝试连接（如果需要）
+      _connectIfNeeded();
     }
   }
 
-  /// 连接到服务器
-  Future<void> _connectToServer() async {
-    setState(() => _isConnecting = true);
+  /// 如果尚未连接，则连接到服务器
+  Future<void> _connectIfNeeded() async {
+    // Notifier中的connect方法现在是幂等的，可以安全地多次调用
+    await ref.read(onlineGameProvider.notifier).connect();
+  }
 
-    final notifier = ref.read(onlineGameProvider.notifier);
-    final success = await notifier.connect(serverUrl: AppConfig.serverUrl);
-
-    setState(() => _isConnecting = false);
-
-    if (!success && mounted) {
-      _showErrorDialog('连接失败', '无法连接到游戏服务器，请检查网络连接');
-    }
+  /// 清理当前状态（例如用户点击返回主菜单时）
+  void _cleanupState() {
+    // Notifier现在有一个专用的清理方法
+    ref.read(onlineGameProvider.notifier).cleanup();
   }
 
   @override
@@ -67,9 +69,12 @@ class _OnlineLobbyScreenState extends ConsumerState<OnlineLobbyScreen> {
     // 检查是否已经在房间中，如果是则直接跳转到游戏屏幕
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (onlineState.roomInfo != null && onlineState.currentPlayer != null) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const OnlineGameScreen()),
-        );
+        // 避免在build过程中导航
+        if (ModalRoute.of(context)?.isCurrent ?? false) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (context) => const OnlineGameScreen()),
+          );
+        }
       }
     });
 
@@ -85,7 +90,7 @@ class _OnlineLobbyScreenState extends ConsumerState<OnlineLobbyScreen> {
       }
 
       // 显示错误信息
-      if (next.error != null) {
+      if (next.error != null && previous?.error != next.error) {
         _showErrorDialog('错误', next.error!);
         // 延迟清除错误状态
         Future.microtask(() {
@@ -109,35 +114,23 @@ class _OnlineLobbyScreenState extends ConsumerState<OnlineLobbyScreen> {
                 padding: const EdgeInsets.all(20),
                 child: Column(
                   children: [
-                    const SizedBox(height: 40),
+                    const SizedBox(height: 10),
 
                     // 标题
-                    _buildTitle(),
+                    _buildTitleAndStatusInfo(onlineState),
 
                     const SizedBox(height: 10),
 
-                    // 连接状态
-                    _buildConnectionStatus(onlineState),
-
-                    // 开发模式：显示服务器地址
-                    if (AppConfig.isDebug) _buildServerInfo(),
-
-                    const SizedBox(height: 20),
-
                     // 玩家姓名输入
                     _buildPlayerNameInput(),
-
-                    const SizedBox(height: 30),
+                    const SizedBox(height: 10),
 
                     // 房间操作
-                    if (onlineState.isConnected) ...[
-                      _buildCreateRoomSection(),
-                      const SizedBox(height: 20),
-                      _buildJoinRoomSection(),
-                    ],
+                    _buildCreateRoomSection(),
+                    const SizedBox(height: 10),
+                    _buildJoinRoomSection(),
 
-                    const SizedBox(height: 40),
-
+                    const SizedBox(height: 20),
                     // 返回按钮
                     _buildBackButton(),
                   ],
@@ -150,118 +143,141 @@ class _OnlineLobbyScreenState extends ConsumerState<OnlineLobbyScreen> {
     );
   }
 
-  Widget _buildTitle() {
+  Widget _buildTitleAndStatusInfo(OnlineGameState onlineState) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+      width: double.infinity,
       decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.4),
+        color: Colors.black.withOpacity(0.4),
         borderRadius: BorderRadius.circular(25),
         boxShadow: [
           BoxShadow(
-            color: Colors.white.withValues(alpha: 0.2),
+            color: Colors.white.withOpacity(0.2),
             blurRadius: 15,
             offset: const Offset(0, 5),
           ),
         ],
       ),
-      child: const Text(
-        '🌐 在线对战',
-        style: TextStyle(
-          fontSize: 36,
-          fontWeight: FontWeight.bold,
-          color: Colors.white,
-        ),
-        textAlign: TextAlign.center,
+      child: Column(
+        children: [
+          const Text(
+            '🌐 在线对战',
+            style: TextStyle(
+              fontSize: 36,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          // 连接状态
+          _buildConnectionStatus(onlineState),
+
+          // 开发模式：显示服务器地址
+          if (AppConfig.isDebug) _buildServerInfo(),
+        ],
       ),
     );
   }
 
   Widget _buildConnectionStatus(OnlineGameState state) {
     final Widget statusWidget;
-    final Color statusColor;
     final String statusText;
 
-    if (_isConnecting || state.isConnecting) {
-      statusColor = Colors.orange;
-      statusText = '正在连接...';
-      statusWidget = const SizedBox(
-        width: 16,
-        height: 16,
-        child: CircularProgressIndicator(strokeWidth: 2),
-      );
-    } else if (state.isConnected) {
-      statusColor = Colors.green;
-      statusText = '已连接服务器';
-      statusWidget = const Icon(Icons.check_circle, size: 20);
-    } else {
-      statusColor = Colors.red;
-      statusText = '连接断开';
-      statusWidget = const Icon(Icons.error, size: 20);
+    switch (state.connectionStatus) {
+      case ConnectionStatus.initial:
+      case ConnectionStatus.connecting:
+        statusText = '正在连接...';
+        statusWidget = const SizedBox(
+          width: 16,
+          height: 16,
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            color: Colors.orange,
+          ),
+        );
+        break;
+      case ConnectionStatus.connected:
+        statusText = '已连接服务器';
+        statusWidget = const Icon(
+          Icons.check_circle,
+          size: 20,
+          color: Colors.green,
+        );
+        break;
+      case ConnectionStatus.disconnected:
+        statusText = '连接断开';
+        statusWidget = Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.error, size: 20, color: Colors.red),
+            const SizedBox(width: 4),
+            TextButton(
+              onPressed: _connectIfNeeded,
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                minimumSize: Size.zero,
+              ),
+              child: const Text(
+                '重连',
+                style: TextStyle(color: Colors.red, fontSize: 12),
+              ),
+            ),
+          ],
+        );
+        break;
     }
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.7),
-        borderRadius: BorderRadius.circular(15),
-        border: Border.all(color: statusColor.withValues(alpha: 0.3)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          statusWidget,
-          const SizedBox(width: 8),
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        if (statusWidget is! Row) statusWidget,
+        if (statusWidget is Row) statusWidget else const SizedBox(width: 8),
+        if (statusWidget is! Row)
           Text(
             statusText,
-            style: TextStyle(color: statusColor, fontWeight: FontWeight.w600),
+            style: TextStyle(
+              color: statusWidget is Icon
+                  ? (statusWidget.color)
+                  : Colors.orange,
+              fontWeight: FontWeight.w600,
+              fontSize: 15,
+            ),
           ),
-        ],
-      ),
+      ],
     );
   }
 
   Widget _buildServerInfo() {
     final onlineState = ref.watch(onlineGameProvider);
-    return Container(
-      margin: const EdgeInsets.only(top: 15),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.7),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.info_outline, size: 16, color: Colors.blue),
-              const SizedBox(width: 8),
-              Flexible(
-                child: Text(
-                  '开发模式 - 服务器: ${AppConfig.serverUrl}',
-                  style: const TextStyle(
-                    color: Colors.blue,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                  ),
-                  overflow: TextOverflow.ellipsis,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Flexible(
+              child: Text(
+                '开发模式 - 服务器: ${AppConfig.serverUrl}',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
                 ),
+                overflow: TextOverflow.ellipsis,
               ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Text(
-            '调试: 连接=${onlineState.isConnected}, 连接中=${onlineState.isConnecting}, 错误=${onlineState.error ?? "无"}',
-            style: const TextStyle(color: Colors.blue, fontSize: 10),
-          ),
-          Text(
-            '按钮: 可创建=${_canCreateRoom()}, 玩家名=${_playerNameController.text.trim()}',
-            style: const TextStyle(color: Colors.blue, fontSize: 10),
-          ),
-        ],
-      ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Text(
+          '调试: status=${onlineState.connectionStatus.name}, joining=${onlineState.isJoiningRoom}',
+          style: const TextStyle(color: Colors.white, fontSize: 10),
+        ),
+        Text(
+          '错误=${onlineState.error ?? "无"}',
+          style: const TextStyle(color: Colors.white, fontSize: 10),
+        ),
+      ],
     );
   }
 
@@ -269,11 +285,11 @@ class _OnlineLobbyScreenState extends ConsumerState<OnlineLobbyScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.95),
+        color: Colors.white.withOpacity(0.95),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
+            color: Colors.black.withOpacity(0.1),
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),
@@ -312,11 +328,11 @@ class _OnlineLobbyScreenState extends ConsumerState<OnlineLobbyScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.95),
+        color: Colors.white.withOpacity(0.95),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
+            color: Colors.black.withOpacity(0.1),
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),
@@ -324,22 +340,30 @@ class _OnlineLobbyScreenState extends ConsumerState<OnlineLobbyScreen> {
       ),
       child: Column(
         children: [
-          const Icon(Icons.add_circle, size: 48, color: Colors.green),
-          const SizedBox(height: 16),
-          const Text(
-            '创建房间',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF2E3A4B),
-            ),
+          Row(
+            children: [
+              const Icon(Icons.add_circle, size: 48, color: Colors.green),
+              const SizedBox(width: 10),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    '创建房间',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF2E3A4B),
+                    ),
+                  ),
+                  const Text(
+                    '创建一个新房间，邀请朋友加入',
+                    style: TextStyle(fontSize: 14, color: Colors.grey),
+                  ),
+                ],
+              ),
+            ],
           ),
-          const SizedBox(height: 8),
-          const Text(
-            '创建一个新房间，邀请朋友加入',
-            style: TextStyle(fontSize: 14, color: Colors.grey),
-          ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 10),
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
@@ -353,7 +377,7 @@ class _OnlineLobbyScreenState extends ConsumerState<OnlineLobbyScreen> {
                 ),
               ),
               child: Text(
-                _canCreateRoom() ? '创建房间' : _getCreateRoomButtonText(),
+                _getCreateRoomButtonText(),
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
@@ -371,11 +395,11 @@ class _OnlineLobbyScreenState extends ConsumerState<OnlineLobbyScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.95),
+        color: Colors.white.withOpacity(0.95),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
+            color: Colors.black.withOpacity(0.1),
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),
@@ -383,22 +407,31 @@ class _OnlineLobbyScreenState extends ConsumerState<OnlineLobbyScreen> {
       ),
       child: Column(
         children: [
-          const Icon(Icons.meeting_room, size: 48, color: Colors.blue),
-          const SizedBox(height: 16),
-          const Text(
-            '加入房间',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF2E3A4B),
-            ),
+          Row(
+            children: [
+              const Icon(Icons.meeting_room, size: 48, color: Colors.blue),
+              const SizedBox(width: 10),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    '加入房间',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF2E3A4B),
+                    ),
+                  ),
+                  const Text(
+                    '输入6位房间号加入游戏',
+                    style: TextStyle(fontSize: 14, color: Colors.grey),
+                  ),
+                ],
+              ),
+            ],
           ),
-          const SizedBox(height: 8),
-          const Text(
-            '输入6位房间号加入游戏',
-            style: TextStyle(fontSize: 14, color: Colors.grey),
-          ),
-          const SizedBox(height: 20),
+
+          const SizedBox(height: 10),
           TextField(
             controller: _roomIdController,
             decoration: InputDecoration(
@@ -412,7 +445,7 @@ class _OnlineLobbyScreenState extends ConsumerState<OnlineLobbyScreen> {
             keyboardType: TextInputType.number,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 10),
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
@@ -426,7 +459,7 @@ class _OnlineLobbyScreenState extends ConsumerState<OnlineLobbyScreen> {
                 ),
               ),
               child: Text(
-                _canJoinRoom() ? '加入房间' : _getJoinRoomButtonText(),
+                _getJoinRoomButtonText(),
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
@@ -469,43 +502,56 @@ class _OnlineLobbyScreenState extends ConsumerState<OnlineLobbyScreen> {
   bool _canCreateRoom() {
     final onlineState = ref.watch(onlineGameProvider);
     return _playerNameController.text.trim().isNotEmpty &&
-        onlineState.isConnected &&
-        !onlineState.isConnecting;
+        onlineState.connectionStatus == ConnectionStatus.connected &&
+        !onlineState.isJoiningRoom;
   }
 
   bool _canJoinRoom() {
     final onlineState = ref.watch(onlineGameProvider);
     return _playerNameController.text.trim().isNotEmpty &&
         _roomIdController.text.trim().length == 6 &&
-        onlineState.isConnected &&
-        !onlineState.isConnecting;
+        onlineState.connectionStatus == ConnectionStatus.connected &&
+        !onlineState.isJoiningRoom;
   }
 
   String _getCreateRoomButtonText() {
     final onlineState = ref.watch(onlineGameProvider);
-    if (!onlineState.isConnected && !onlineState.isConnecting) {
-      return '未连接服务器';
-    } else if (onlineState.isConnecting) {
-      return '连接中...';
-    } else if (_playerNameController.text.trim().isEmpty) {
-      return '请输入玩家姓名';
-    } else {
-      return '创建房间';
+    switch (onlineState.connectionStatus) {
+      case ConnectionStatus.connecting:
+      case ConnectionStatus.initial:
+        return '连接中...';
+      case ConnectionStatus.disconnected:
+        return '未连接服务器';
+      case ConnectionStatus.connected:
+        if (onlineState.isJoiningRoom) {
+          return '正在加入...';
+        }
+        if (_playerNameController.text.trim().isEmpty) {
+          return '请输入玩家姓名';
+        }
+        return '创建房间';
     }
   }
 
   String _getJoinRoomButtonText() {
     final onlineState = ref.watch(onlineGameProvider);
-    if (!onlineState.isConnected && !onlineState.isConnecting) {
-      return '未连接服务器';
-    } else if (onlineState.isConnecting) {
-      return '连接中...';
-    } else if (_playerNameController.text.trim().isEmpty) {
-      return '请输入玩家姓名';
-    } else if (_roomIdController.text.trim().length != 6) {
-      return '请输入6位房间号';
-    } else {
-      return '加入房间';
+    switch (onlineState.connectionStatus) {
+      case ConnectionStatus.connecting:
+      case ConnectionStatus.initial:
+        return '连接中...';
+      case ConnectionStatus.disconnected:
+        return '未连接服务器';
+      case ConnectionStatus.connected:
+        if (onlineState.isJoiningRoom) {
+          return '正在加入...';
+        }
+        if (_playerNameController.text.trim().isEmpty) {
+          return '请输入玩家姓名';
+        }
+        if (_roomIdController.text.trim().length != 6) {
+          return '请输入6位房间号';
+        }
+        return '加入房间';
     }
   }
 
@@ -526,6 +572,7 @@ class _OnlineLobbyScreenState extends ConsumerState<OnlineLobbyScreen> {
   }
 
   void _showErrorDialog(String title, String message) {
+    if (!mounted) return;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/game_state.dart';
-import '../providers/game_provider.dart';
+import '../providers/game.dart';
 import '../widgets/game_board.dart';
 import '../widgets/victory_dialog.dart';
 import '../widgets/game_menu.dart';
@@ -81,7 +81,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
   Widget _buildAppBar(
     BuildContext context,
     GameState gameState,
-    GameNotifier gameNotifier,
+    Game gameNotifier,
   ) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -120,7 +120,7 @@ class _GameScreenState extends ConsumerState<GameScreen> {
   void _showGameMenu(
     BuildContext context,
     GameState gameState,
-    GameNotifier gameNotifier,
+    Game gameNotifier,
   ) {
     showModalBottomSheet(
       context: context,
@@ -135,15 +135,15 @@ class _GameScreenState extends ConsumerState<GameScreen> {
     );
   }
 
-  void _showVictoryDialog(GameState gameState, GameNotifier gameNotifier) {
+  void _showVictoryDialog(GameState gameState, Game gameNotifier) {
     showDialog(
       context: context,
-      barrierDismissible: false,
+      barrierDismissible: true,
       builder: (context) => VictoryDialog(
         gameStatus: gameState.status,
         isAiMode: gameState.isAiMode,
         onPlayAgain: () => gameNotifier.resetGame(aiMode: gameState.isAiMode),
-        onChangeMode: () => gameNotifier.resetGame(aiMode: !gameState.isAiMode),
+        onGoToMenu: () => Navigator.of(context).pop(),
       ),
     );
   }

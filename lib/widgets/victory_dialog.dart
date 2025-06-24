@@ -5,14 +5,14 @@ class VictoryDialog extends StatefulWidget {
   final GameStatus gameStatus;
   final bool isAiMode;
   final VoidCallback onPlayAgain;
-  final VoidCallback onChangeMode;
+  final VoidCallback onGoToMenu;
 
   const VictoryDialog({
     super.key,
     required this.gameStatus,
     required this.isAiMode,
     required this.onPlayAgain,
-    required this.onChangeMode,
+    required this.onGoToMenu,
   });
 
   @override
@@ -68,7 +68,7 @@ class _VictoryDialogState extends State<VictoryDialog>
       child: ScaleTransition(
         scale: _scaleAnimation,
         child: Container(
-          padding: const EdgeInsets.all(30),
+          padding: const EdgeInsets.all(25),
           margin: const EdgeInsets.symmetric(horizontal: 20),
           decoration: BoxDecoration(
             color: Colors.white,
@@ -88,8 +88,8 @@ class _VictoryDialogState extends State<VictoryDialog>
               RotationTransition(
                 turns: _rotationAnimation,
                 child: Container(
-                  width: 80,
-                  height: 80,
+                  width: 70,
+                  height: 70,
                   decoration: BoxDecoration(
                     color: _getStatusColor().withValues(alpha: 0.1),
                     shape: BoxShape.circle,
@@ -115,7 +115,7 @@ class _VictoryDialogState extends State<VictoryDialog>
                 textAlign: TextAlign.center,
               ),
 
-              const SizedBox(height: 10),
+              const SizedBox(height: 5),
 
               // 副标题
               Text(
@@ -124,45 +124,42 @@ class _VictoryDialogState extends State<VictoryDialog>
                 textAlign: TextAlign.center,
               ),
 
-              const SizedBox(height: 30),
+              const SizedBox(height: 25),
 
               // 按钮
-              Row(
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                        widget.onChangeMode();
-                      },
-                      icon: Icon(_getModeIcon()),
-                      label: Text(_getModeButtonText()),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
+                  OutlinedButton.icon(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      widget.onGoToMenu();
+                    },
+                    icon: const Icon(Icons.menu),
+                    label: const Text('返回菜单'),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
                       ),
                     ),
                   ),
 
-                  const SizedBox(width: 15),
+                  const SizedBox(height: 10),
 
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        Navigator.of(context).pop();
-                        widget.onPlayAgain();
-                      },
-                      icon: const Icon(Icons.refresh),
-                      label: const Text('再来一局'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: _getStatusColor(),
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      widget.onPlayAgain();
+                    },
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('再来一局'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _getStatusColor(),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
                       ),
                     ),
                   ),
@@ -226,13 +223,5 @@ class _VictoryDialogState extends State<VictoryDialog>
       default:
         return Colors.grey;
     }
-  }
-
-  IconData _getModeIcon() {
-    return widget.isAiMode ? Icons.people : Icons.smart_toy;
-  }
-
-  String _getModeButtonText() {
-    return widget.isAiMode ? '双人对战' : 'VS AI';
   }
 }

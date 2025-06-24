@@ -1,9 +1,15 @@
 import 'dart:math';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../models/game_state.dart';
 
-class GameNotifier extends StateNotifier<GameState> {
-  GameNotifier() : super(const GameState());
+part 'game.g.dart';
+
+@riverpod
+class Game extends _$Game {
+  @override
+  GameState build() {
+    return const GameState();
+  }
 
   /// 重新开始游戏
   void resetGame({bool aiMode = false}) {
@@ -103,7 +109,3 @@ class GameNotifier extends StateNotifier<GameState> {
     }
   }
 }
-
-final gameProvider = StateNotifierProvider<GameNotifier, GameState>((ref) {
-  return GameNotifier();
-});

@@ -56,7 +56,6 @@ frog_game/
 │   │   └── handlers/          # 请求处理器
 │   ├── bin/server.dart        # 服务器入口
 │   ├── Dockerfile             # Docker配置
-│   └── deploy.sh             # 部署脚本
 └── images/                   # 资源文件
 ```
 
@@ -76,7 +75,7 @@ flutter pub get
 flutter pub run build_runner build
 
 # 4. 运行应用，不提供则使用默认 devServerUrl
-flutter run --dart-define=SERVER_URL=ws://your-server.com/
+flutter run --dart-define=SERVER_URL=ws://localhost:8080/frog
 ```
 
 ### 服务器开发
@@ -92,7 +91,7 @@ dart pub get
 dart pub run build_runner build
 
 # 本地运行
-./deploy.sh dev
+dart run bin/server.dart
 ```
 
 服务器将在 `http://localhost:8080` 启动。
@@ -101,8 +100,8 @@ dart pub run build_runner build
 
 ```bash
 cd server
-docker build -t corkine/frog-game:0.0.1 .
-docker run -p 8080:8080 corkine/frog-game:0.0.1
+docker build -t corkine/frog-game:0.0.2 .
+docker run -p 8080:8080 corkine/frog-game:0.0.2
 ```
 
 ### 客户端部署
@@ -118,36 +117,58 @@ flutter build web --release --base-href=/frog/
 
 #### 连接
 ```
-WS ws://server-domain/ws
+WS ws://server-domain/frog
 ```
 
 #### 消息格式
+
+所有消息都遵循一个基础的JSON结构。
+
+**客户端 -> 服务器 (C→S)**
 ```json
 {
   "type": "MessageType",
-  "roomId": "123456",
+  "roomId": "123456", // 可选，取决于消息类型
   "playerId": "player123",
-  "data": {...},
-  "error": "error message",
+  "data": { ... }, // 可选，具体结构看消息类型
+  "timestamp": 1640995200000
+}
+```
+
+**服务器 -> 客户端 (S→C)**
+```json
+{
+  "type": "MessageType",
+  "roomId": "123456", // 可选
+  "playerId": "player123", // 可选
+  "data": { // 结构取决于消息类型
+    "roomInfo": { ... },
+    "gameState": { ... }
+    // 或 "message" 用于错误
+  },
   "timestamp": 1640995200000
 }
 ```
 
 #### 消息类型
 
-| 类型 | 方向 | 说明 |
-|------|------|------|
-| `createRoom` | C→S | 创建房间 |
-| `joinRoom` | C→S | 加入房间 |
-| `leaveRoom` | C→S | 离开房间 |
-| `gameMove` | C→S | 游戏移动 |
-| `gameReset` | C→S | 重置游戏 |
-| `roomCreated` | S→C | 房间创建成功 |
-| `roomJoined` | S→C | 加入房间成功 |
-| `playerJoined` | S→C | 玩家加入通知 |
-| `playerLeft` | S→C | 玩家离开通知 |
-| `gameUpdate` | S→C | 游戏状态更新 |
-| `error` | S→C | 错误消息 |
+| 类型 | 方向 | `data` 负载说明 |
+|--------------|-------|---------------------------------------------------------------------|
+| `ping` | C→S | 无 `data` |
+| `pong` | S→C | 无 `data` |
+| `createRoom` | C→S | `{'playerName': 'string'}` |
+| `joinRoom` | C→S | `{'playerName': 'string'}` |
+| `leaveRoom` | C→S | 无 `data` |
+| `gameMove` | C→S | `{'position': int, 'player': 'X'|'O', ...}` |
+| `gameReset` | C→S | 无 `data` |
+| `roomCreated` | S→C | `{'roomInfo': RoomInfo, 'gameState': GameState}` |
+| `roomJoined` | S→C | `{'roomInfo': RoomInfo, 'gameState': GameState}` |
+| `playerJoined` | S→C | `{'roomInfo': RoomInfo, 'gameState': GameState}` |
+| `playerLeft` | S→C | `{'roomInfo': RoomInfo, 'gameState': GameState}` |
+| `gameUpdate` | S→C | `{'roomInfo': RoomInfo, 'gameState': GameState}` |
+| `gameOver` | S→C | `{'roomInfo': RoomInfo, 'gameState': GameState}` |
+| `gameReset` | S→C | `{'roomInfo': RoomInfo, 'gameState': GameState}` |
+| `error` | S→C | `{'message': 'string'}` |
 
 ### HTTP 端点
 
@@ -156,7 +177,7 @@ WS ws://server-domain/ws
 | `/` | GET | 服务器首页 |
 | `/health` | GET | 健康检查 |
 | `/stats` | GET | 服务器统计 |
-| `/ws` | GET | WebSocket升级 |
+| `/frog` | GET | WebSocket升级 |
 
 ## 🛠️ 开发指南
 
@@ -208,7 +229,6 @@ dart pub run build_runner build --delete-conflicting-outputs
 ### 部署
 - 阿里云账号
 - 容器镜像服务
-- 函数计算服务
 
 ## 🤝 贡献指南
 
@@ -226,7 +246,6 @@ dart pub run build_runner build --delete-conflicting-outputs
 
 - [Flutter 官方文档](https://flutter.dev/docs)
 - [Dart 官方文档](https://dart.dev/guides)
-- [阿里云函数计算](https://www.aliyun.com/product/fc)
 - [Riverpod 状态管理](https://riverpod.dev/)
 
 ## 🎮 游戏规则

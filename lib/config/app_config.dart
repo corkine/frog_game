@@ -1,10 +1,10 @@
 /// 应用程序配置类
 class AppConfig {
   /// 开发环境配置
-  static const String devServerUrl = 'wss://frogme.mazhangjing.com/ws';
+  static const String devServerUrl = 'ws://localhost:8080/frog';
 
   /// 生产环境配置 - 替换为您的实际服务器地址
-  static const String prodServerUrl = 'wss://frogme.mazhangjing.com/ws';
+  static const String prodServerUrl = 'wss://frogme.mazhangjing.com/frog';
 
   /// 当前环境
   static const bool isDebug = bool.fromEnvironment('dart.vm.product') == false;
@@ -32,5 +32,5 @@ class AppConfig {
 
   /// UI配置
   static const String appName = '青蛙跳井';
-  static const String appVersion = '1.0.0';
+  static const String appVersion = '1.0.1 · 由 AI 驱动开发';
 }

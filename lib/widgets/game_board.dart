@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/game_state.dart';
-import '../providers/game_provider.dart';
+import '../providers/game.dart';
 
 class GameBoard extends ConsumerWidget {
   final GameState? gameState;

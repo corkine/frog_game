@@ -6,8 +6,8 @@ import 'package:shelf_router/shelf_router.dart';
 import 'package:shelf_web_socket/shelf_web_socket.dart';
 import 'package:shelf_cors_headers/shelf_cors_headers.dart';
 
-import '../lib/services/room_manager.dart';
-import '../lib/handlers/websocket_handler.dart';
+import 'package:frog_game_server/services/room_manager.dart';
+import 'package:frog_game_server/handlers/websocket_handler.dart';
 
 void main(List<String> args) async {
   // 设置日志
@@ -47,7 +47,7 @@ void main(List<String> args) async {
 
   // WebSocket 端点
   router.get(
-    '/ws',
+    '/frog',
     webSocketHandler((webSocket) {
       logger.info('新的WebSocket连接');
       webSocketManager.handleConnection(webSocket);
@@ -81,7 +81,7 @@ void main(List<String> args) async {
               
               <h2>API 端点</h2>
               <div class="endpoint">
-                  <strong>WebSocket:</strong> <span class="code">ws://localhost:8080/ws</span><br>
+                  <strong>WebSocket:</strong> <span class="code">ws://localhost:8080/frog</span><br>
                   用于游戏实时通信
               </div>
               <div class="endpoint">
@@ -111,7 +111,7 @@ void main(List<String> args) async {
   final handler = Pipeline()
       .addMiddleware(corsHeaders())
       .addMiddleware(logRequests())
-      .addHandler(router);
+      .addHandler(router.call);
 
   // 启动服务器
   final port = int.parse(Platform.environment['PORT'] ?? '8080');
@@ -119,7 +119,7 @@ void main(List<String> args) async {
 
   logger.info('🚀 服务器启动成功!');
   logger.info('📡 监听地址: http://${server.address.host}:${server.port}');
-  logger.info('🔗 WebSocket: ws://${server.address.host}:${server.port}/ws');
+  logger.info('🔗 WebSocket: ws://${server.address.host}:${server.port}/frog');
   logger.info('📊 状态页面: http://${server.address.host}:${server.port}/stats');
 
   // 优雅关闭处理
