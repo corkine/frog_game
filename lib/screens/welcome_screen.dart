@@ -161,7 +161,7 @@ class WelcomeScreen extends ConsumerWidget {
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
-        'Version ${AppConfig.appVersion}',
+        AppConfig.appVersion,
         style: const TextStyle(
           color: Colors.white,
           fontSize: 12,

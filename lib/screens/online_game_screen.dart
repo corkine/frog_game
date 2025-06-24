@@ -470,7 +470,7 @@ class _OnlineGameScreenState extends ConsumerState<OnlineGameScreen> {
 
     showDialog(
       context: context,
-      barrierDismissible: false,
+      barrierDismissible: true,
       builder: (context) => OnlineVictoryDialog(
         gameStatus: state.gameState.status,
         mySymbol: state.mySymbol,
