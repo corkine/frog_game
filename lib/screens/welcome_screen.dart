@@ -20,28 +20,35 @@ class WelcomeScreen extends ConsumerWidget {
 
           // 内容
           SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Spacer(),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(
+                  maxWidth: AppConfig.pageMaxWidth,
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Spacer(flex: 2),
 
-                  // 游戏标题区域
-                  _buildTitle(),
+                      // 游戏标题区域
+                      _buildTitle(context),
 
-                  const Spacer(),
+                      const Spacer(flex: 2),
 
-                  // 游戏模式选择
-                  _buildGameModes(context, ref),
+                      // 游戏模式选择
+                      _buildGameModes(context, ref),
 
-                  const SizedBox(height: 10),
+                      const Spacer(flex: 1),
 
-                  // 版本信息
-                  _buildVersionInfo(),
+                      // 版本信息
+                      _buildVersionInfo(),
 
-                  const SizedBox(height: 10),
-                ],
+                      const SizedBox(height: 10),
+                    ],
+                  ),
+                ),
               ),
             ),
           ),
@@ -50,30 +57,32 @@ class WelcomeScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildTitle() {
+  Widget _buildTitle(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
     return Column(
       children: [
-        // 青蛙图标
-        Container(
-          width: 100,
-          height: 100,
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.9),
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.2),
-                blurRadius: 20,
-                offset: const Offset(0, 5),
-              ),
-            ],
+        if (screenHeight >= 600) ...[
+          // 青蛙图标
+          Container(
+            width: 100,
+            height: 100,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.9),
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.2),
+                  blurRadius: 20,
+                  offset: const Offset(0, 5),
+                ),
+              ],
+            ),
+            child: CircleAvatar(
+              child: Text("🐸", style: TextStyle(fontSize: 50)),
+            ),
           ),
-          child: CircleAvatar(
-            child: Text("🐸", style: TextStyle(fontSize: 50)),
-          ),
-        ),
-
-        const SizedBox(height: 20),
+          const SizedBox(height: 20),
+        ],
 
         // 标题
         Container(
@@ -109,7 +118,6 @@ class WelcomeScreen extends ConsumerWidget {
 
   Widget _buildGameModes(BuildContext context, WidgetRef ref) {
     return Column(
-      spacing: 10,
       children: [
         _buildModeButton(
           context: context,
@@ -120,7 +128,7 @@ class WelcomeScreen extends ConsumerWidget {
           color: Colors.blue.shade600,
           onTap: () => _startGame(context, ref, aiMode: true),
         ),
-
+        const SizedBox(height: 10),
         _buildModeButton(
           context: context,
           ref: ref,
@@ -130,7 +138,7 @@ class WelcomeScreen extends ConsumerWidget {
           color: Colors.orange.shade600,
           onTap: () => _startGame(context, ref, aiMode: false),
         ),
-
+        const SizedBox(height: 10),
         _buildModeButton(
           context: context,
           ref: ref,

@@ -19,8 +19,7 @@ class AppConfig {
 
   /// UI配置
   static const String appName = '青蛙跳井';
-  static const String appVersion = "${String.fromEnvironment(
-    'APP_VERSION',
-    defaultValue: 'local-dev',
-  )} · 由 AI 驱动开发";
+  static const String appVersion =
+      "${String.fromEnvironment('APP_VERSION', defaultValue: 'local-dev')} · 由 AI 驱动开发";
+  static const double pageMaxWidth = 600;
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../config/app_config.dart';
 import '../models/network_message.dart';
 import '../providers/online_game.dart';
 import '../models/game_state.dart';
@@ -48,33 +49,40 @@ class _OnlineGameScreenState extends ConsumerState<OnlineGameScreen> {
 
                 // 游戏区域
                 Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      children: [
-                        // 当前回合信息
-                        _buildTurnIndicator(onlineState),
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(
+                        maxWidth: AppConfig.pageMaxWidth,
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
+                          children: [
+                            // 当前回合信息
+                            _buildTurnIndicator(onlineState),
 
-                        const SizedBox(height: 20),
+                            const SizedBox(height: 20),
 
-                        // 游戏棋盘
-                        Expanded(
-                          child: Center(
-                            child: GameBoard(
-                              gameState: onlineState.gameState,
-                              onCellTap: (index) =>
-                                  _onCellTap(ref, onlineState, index),
-                              isOnlineMode: true,
-                              isMyTurn: onlineState.isMyTurn,
+                            // 游戏棋盘
+                            Expanded(
+                              child: Center(
+                                child: GameBoard(
+                                  gameState: onlineState.gameState,
+                                  onCellTap: (index) =>
+                                      _onCellTap(ref, onlineState, index),
+                                  isOnlineMode: true,
+                                  isMyTurn: onlineState.isMyTurn,
+                                ),
+                              ),
                             ),
-                          ),
+
+                            const SizedBox(height: 20),
+
+                            // 底部按钮
+                            _buildBottomButtons(context, ref, onlineState),
+                          ],
                         ),
-
-                        const SizedBox(height: 20),
-
-                        // 底部按钮
-                        _buildBottomButtons(context, ref, onlineState),
-                      ],
+                      ),
                     ),
                   ),
                 ),

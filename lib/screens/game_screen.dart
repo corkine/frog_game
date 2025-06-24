@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../config/app_config.dart';
 import '../models/game_state.dart';
 import '../providers/game.dart';
 import '../widgets/game_board.dart';
@@ -48,26 +49,26 @@ class _GameScreenState extends ConsumerState<GameScreen> {
 
                 // 游戏内容
                 Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      children: [
-                        // 游戏状态信息
-                        _buildGameStatus(gameState),
-                        const SizedBox(height: 20),
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(
+                        maxWidth: AppConfig.pageMaxWidth,
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
+                          children: [
+                            // 游戏状态信息
+                            _buildGameStatus(gameState),
+                            const SizedBox(height: 20),
 
-                        // 游戏棋盘 - 更加突出和居中
-                        Expanded(
-                          child: Center(
-                            child: ConstrainedBox(
-                              constraints: const BoxConstraints(maxWidth: 500),
-                              child: const GameBoard(),
-                            ),
-                          ),
+                            // 游戏棋盘 - 更加突出和居中
+                            const Expanded(child: Center(child: GameBoard())),
+
+                            const SizedBox(height: 20),
+                          ],
                         ),
-
-                        const SizedBox(height: 20),
-                      ],
+                      ),
                     ),
                   ),
                 ),

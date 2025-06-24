@@ -6,6 +6,8 @@
 ![Dart](https://img.shields.io/badge/Dart-0175C2?style=for-the-badge&logo=dart&logoColor=white)
 ![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)
 
+<img src="https://static2.mazhangjing.com/cyber/202506/d4c26313_image.png" width="400">
+
 ## ✨ 功能特性
 
 ### 游戏模式
