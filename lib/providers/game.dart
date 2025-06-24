@@ -4,7 +4,7 @@ import '../models/game_state.dart';
 
 part 'game.g.dart';
 
-@riverpod
+@Riverpod(keepAlive: true)
 class Game extends _$Game {
   @override
   GameState build() {

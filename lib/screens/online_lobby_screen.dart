@@ -111,33 +111,40 @@ class _OnlineLobbyScreenState extends ConsumerState<OnlineLobbyScreen>
 
           // 内容
           SafeArea(
-            child: SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  children: [
-                    const SizedBox(height: 10),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return SingleChildScrollView(
+                  child: ConstrainedBox(
+                    constraints:
+                        BoxConstraints(minHeight: constraints.maxHeight),
+                    child: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          // 标题
+                          _buildTitleAndStatusInfo(onlineState),
 
-                    // 标题
-                    _buildTitleAndStatusInfo(onlineState),
+                          const SizedBox(height: 30),
 
-                    const SizedBox(height: 10),
+                          // 玩家姓名输入
+                          _buildPlayerNameInput(),
+                          const SizedBox(height: 20),
 
-                    // 玩家姓名输入
-                    _buildPlayerNameInput(),
-                    const SizedBox(height: 10),
+                          // 房间操作
+                          _buildCreateRoomSection(),
+                          const SizedBox(height: 10),
+                          _buildJoinRoomSection(),
 
-                    // 房间操作
-                    _buildCreateRoomSection(),
-                    const SizedBox(height: 10),
-                    _buildJoinRoomSection(),
-
-                    const SizedBox(height: 20),
-                    // 返回按钮
-                    _buildBackButton(),
-                  ],
-                ),
-              ),
+                          const SizedBox(height: 30),
+                          // 返回按钮
+                          _buildBackButton(),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
             ),
           ),
         ],

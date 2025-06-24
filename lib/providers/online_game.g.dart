@@ -6,7 +6,7 @@ part of 'online_game.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$onlineGameHash() => r'e7e7e21c2feb1aa717ee891add499a18ea683e43';
+String _$onlineGameHash() => r'5aeeba248a529003e0b4eb8d4abd2f9e8f5a15d6';
 
 /// 在线游戏的StateNotifier，负责所有业务逻辑
 ///
