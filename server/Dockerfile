@@ -4,10 +4,10 @@ FROM dart:stable AS build
 # 设置工作目录
 WORKDIR /app
 
-# 声明构建参数
+# 1. 声明构建参数，用于接收来自 CI 的版本号
 ARG APP_VERSION=local-dev
 
-# 将构建参数设置为环境变量
+# 2. 将收到的构建参数值，设置为容器的运行时环境变量
 ENV APP_VERSION=$APP_VERSION
 
 # 复制 pubspec 文件
@@ -55,5 +55,5 @@ EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD curl -f http://localhost:8080/health || exit 1
 
-# 启动应用
-CMD ["./server"] 
+# 3. 运行服务器。此时，Dart代码可以通过 Platform.environment 读取到 ENV 设置的 APP_VERSION
+CMD ["dart", "run", "bin/server.dart"] 

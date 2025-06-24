@@ -5,6 +5,7 @@ import '../providers/game.dart';
 import '../widgets/game_board.dart';
 import '../widgets/victory_dialog.dart';
 import '../widgets/game_menu.dart';
+import 'welcome_screen.dart';
 
 class GameScreen extends ConsumerStatefulWidget {
   const GameScreen({super.key});
@@ -143,9 +144,19 @@ class _GameScreenState extends ConsumerState<GameScreen> {
         gameStatus: gameState.status,
         isAiMode: gameState.isAiMode,
         onPlayAgain: () => gameNotifier.resetGame(aiMode: gameState.isAiMode),
-        onGoToMenu: () => Navigator.of(context).pop(),
+        onGoToMenu: _goBackToMenu,
       ),
     );
+  }
+
+  /// 导航回主菜单并清空所有其他页面
+  void _goBackToMenu() {
+    if (mounted) {
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (context) => const WelcomeScreen()),
+        (route) => false,
+      );
+    }
   }
 
   Widget _buildGameStatus(GameState gameState) {

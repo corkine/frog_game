@@ -90,7 +90,9 @@ class _OnlineLobbyScreenState extends ConsumerState<OnlineLobbyScreen>
       }
 
       // 显示错误信息
-      if (next.error != null && previous?.error != next.error) {
+      if (next.error != null &&
+          previous?.error != next.error &&
+          next.connectionStatus == ConnectionStatus.connected) {
         _showErrorDialog('错误', next.error!);
         // 延迟清除错误状态
         Future.microtask(() {
@@ -205,25 +207,8 @@ class _OnlineLobbyScreenState extends ConsumerState<OnlineLobbyScreen>
         );
         break;
       case ConnectionStatus.disconnected:
-        statusText = '连接断开';
-        statusWidget = Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.error, size: 20, color: Colors.red),
-            const SizedBox(width: 4),
-            TextButton(
-              onPressed: _connectIfNeeded,
-              style: TextButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                minimumSize: Size.zero,
-              ),
-              child: const Text(
-                '重连',
-                style: TextStyle(color: Colors.red, fontSize: 12),
-              ),
-            ),
-          ],
-        );
+        statusText = state.error ?? '连接断开';
+        statusWidget = const Icon(Icons.error, size: 20, color: Colors.red);
         break;
     }
 
@@ -232,17 +217,18 @@ class _OnlineLobbyScreenState extends ConsumerState<OnlineLobbyScreen>
       children: [
         if (statusWidget is! Row) statusWidget,
         if (statusWidget is Row) statusWidget else const SizedBox(width: 8),
-        if (statusWidget is! Row)
-          Text(
-            statusText,
-            style: TextStyle(
-              color: statusWidget is Icon
-                  ? (statusWidget.color)
-                  : Colors.orange,
-              fontWeight: FontWeight.w600,
-              fontSize: 15,
-            ),
+        Text(
+          statusText,
+          style: TextStyle(
+            color: statusWidget is Icon
+                ? (statusWidget.color)
+                : state.connectionStatus == ConnectionStatus.disconnected
+                ? Colors.red
+                : Colors.orange,
+            fontWeight: FontWeight.w600,
+            fontSize: 15,
           ),
+        ),
       ],
     );
   }

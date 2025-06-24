@@ -20,11 +20,11 @@ class WebSocketService {
   /// [serverUrl] 要连接的服务器地址
   /// [onDone] 连接关闭时的回调
   /// [onError] 发生错误时的回调
-  Stream<dynamic>? connect(
+  Future<Stream<dynamic>?> connect(
     String serverUrl, {
     void Function()? onDone,
     void Function(Object, StackTrace)? onError,
-  }) {
+  }) async {
     if (_channel != null) {
       disconnect();
     }
@@ -33,7 +33,12 @@ class WebSocketService {
         print('尝试连接到: $serverUrl');
       }
       _channel = WebSocketChannel.connect(Uri.parse(serverUrl));
-      
+      await _channel!.ready;
+
+      if (kDebugMode) {
+        print('WebSocket 连接成功，准备就绪。');
+      }
+
       // 我们需要一个可以被多次监听的流
       _broadcastStream = _channel!.stream.asBroadcastStream(
         onCancel: (subscription) {
@@ -59,10 +64,12 @@ class WebSocketService {
       );
       
       return _broadcastStream;
-    } catch (e) {
+    } catch (e, stackTrace) {
       if (kDebugMode) {
         print('WebSocket 连接失败: $e');
       }
+      // 将异常传递给调用者
+      onError?.call(e, stackTrace);
       _reset();
       return null;
     }

@@ -6,6 +6,7 @@ import '../providers/online_game.dart';
 import '../models/game_state.dart';
 import '../widgets/game_board.dart';
 import '../widgets/online_victory_dialog.dart';
+import 'welcome_screen.dart';
 
 class OnlineGameScreen extends ConsumerStatefulWidget {
   const OnlineGameScreen({super.key});
@@ -467,14 +468,19 @@ class _OnlineGameScreenState extends ConsumerState<OnlineGameScreen> {
         mySymbol: state.mySymbol,
         winner: winner,
         onPlayAgain: () => ref.read(onlineGameProvider.notifier).resetGame(),
-        onLeaveRoom: () => _leaveRoom(),
+        onLeaveRoom: _leaveRoomAndGoToMenu,
       ),
     );
   }
 
-  void _leaveRoom() {
+  void _leaveRoomAndGoToMenu() {
     ref.read(onlineGameProvider.notifier).leaveRoom();
-    Navigator.of(context).pop(); // 返回到在线大厅
+    if (mounted) {
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (context) => const WelcomeScreen()),
+        (route) => false,
+      );
+    }
   }
 
   void _showLeaveRoomDialog(BuildContext context) {
@@ -492,7 +498,7 @@ class _OnlineGameScreenState extends ConsumerState<OnlineGameScreen> {
           TextButton(
             onPressed: () {
               Navigator.of(context).pop();
-              _leaveRoom();
+              _leaveRoomAndGoToMenu();
             },
             child: const Text('确定'),
           ),

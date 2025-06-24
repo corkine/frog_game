@@ -55,9 +55,18 @@ class OnlineGameState with _$OnlineGameState {
 class OnlineGame extends _$OnlineGame {
   StreamSubscription? _socketSubscription;
   String? _playerId;
+  Timer? _reconnectTimer;
+  int _reconnectAttempts = 0;
+  bool _isDisposed = false;
 
   @override
   OnlineGameState build() {
+    ref.onDispose(() {
+      _isDisposed = true;
+      _reconnectTimer?.cancel();
+      _webSocketService.disconnect();
+      _socketSubscription?.cancel();
+    });
     return const OnlineGameState();
   }
 
@@ -77,74 +86,124 @@ class OnlineGame extends _$OnlineGame {
       return;
     }
 
+    // 在实际应用中，避免在已销毁的notifier上设置状态
+    if (_isDisposed) return;
+
     state = state.copyWith(
         connectionStatus: ConnectionStatus.connecting, error: null);
-    _playerId = _generatePlayerId();
+    _playerId ??= _generatePlayerId();
 
-    final stream = _webSocketService.connect(
+    final stream = await _webSocketService.connect(
       AppConfig.serverUrl,
-      onDone: () {
-        if (state.connectionStatus != ConnectionStatus.disconnected) {
-          state = state.copyWith(
-            connectionStatus: ConnectionStatus.disconnected,
-            // 保留错误信息（如果有的话）
-          );
-          _socketSubscription?.cancel();
-          _socketSubscription = null;
-        }
-      },
+      onDone: () => _handleDisconnection(isError: false),
       onError: (error, stackTrace) {
-        if (state.connectionStatus != ConnectionStatus.disconnected) {
-          state = state.copyWith(
-            connectionStatus: ConnectionStatus.disconnected,
-            error: '连接发生错误: $error',
-          );
-          _socketSubscription?.cancel();
-          _socketSubscription = null;
+        if (kDebugMode) {
+          print('连接错误: $error');
         }
+        _handleDisconnection(isError: true, errorMsg: error.toString());
       },
     );
 
     if (stream != null) {
+      if (_isDisposed) return;
       state = state.copyWith(connectionStatus: ConnectionStatus.connected);
-      _socketSubscription = stream.listen((data) {
-        _handleRawMessage(data);
-      });
+      _reconnectTimer?.cancel();
+      _reconnectAttempts = 0;
+      _socketSubscription = stream.listen(_handleRawMessage);
       // 发送一个ping来"确认"连接并获取玩家ID
       _sendMessage(MessageType.ping);
-    } else {
+    }
+  }
+
+  void _handleDisconnection({required bool isError, String? errorMsg}) {
+    // 如果已销毁，或已有重连任务，则不处理
+    if (_isDisposed || _reconnectTimer?.isActive == true) {
+      return;
+    }
+
+    // 仅当状态不是"已断开"时才更新，避免不必要的UI刷新
+    if (state.connectionStatus != ConnectionStatus.disconnected) {
       state = state.copyWith(
         connectionStatus: ConnectionStatus.disconnected,
-        error: '无法连接到服务器',
+        error: '连接已断开，正在尝试重连...',
       );
     }
+
+    _socketSubscription?.cancel();
+    _socketSubscription = null;
+
+    const maxAttempts = 5;
+    if (_reconnectAttempts >= maxAttempts) {
+      if (kDebugMode) {
+        print('已达到最大重连次数。');
+      }
+      if (!_isDisposed) {
+        state = state.copyWith(
+          connectionStatus: ConnectionStatus.disconnected,
+          error: '多次重连失败，请检查网络并重新进入大厅。',
+        );
+      }
+      return;
+    }
+
+    _reconnectAttempts++;
+    // 指数退避策略，但最长不超过30秒
+    final delaySeconds = min(pow(2, _reconnectAttempts).toInt(), 30);
+
+    if (kDebugMode) {
+      print('连接丢失。将在 $delaySeconds 秒后重试 (第 $_reconnectAttempts 次)...');
+    }
+
+    _reconnectTimer = Timer(Duration(seconds: delaySeconds), () {
+      // 再次检查状态，确保在计时器触发时仍然需要重连
+      if (!_isDisposed &&
+          state.connectionStatus == ConnectionStatus.disconnected) {
+        connect();
+      }
+    });
   }
 
   /// 断开连接
   void disconnect() {
+    _reconnectTimer?.cancel();
+    _reconnectAttempts = 0;
     _webSocketService.disconnect();
     _socketSubscription?.cancel();
     _socketSubscription = null;
-    state = const OnlineGameState(
-        connectionStatus: ConnectionStatus.disconnected);
+    if (!_isDisposed) {
+      state = const OnlineGameState(
+          connectionStatus: ConnectionStatus.disconnected);
+    }
   }
 
   /// 离开界面时清理状态
   void cleanup() {
     disconnect();
     // 重置为完全初始状态
-    state = const OnlineGameState();
+    if (!_isDisposed) {
+      state = const OnlineGameState();
+    }
   }
 
   // --- 用户操作 ---
 
   void createRoom(String playerName) {
+    if (state.connectionStatus != ConnectionStatus.connected) {
+      state = state.copyWith(error: '未连接到服务器，请稍后重试。');
+      connect(); // 尝试连接
+      return;
+    }
     final name =
         playerName.trim().isEmpty ? RandomNames(Zone.us).name() : playerName;
     _sendMessage(MessageType.createRoom, data: {'playerName': name});
   }
 
   void joinRoom(String roomId, String playerName) {
+    if (state.connectionStatus != ConnectionStatus.connected) {
+      state = state.copyWith(error: '未连接到服务器，请稍后重试。');
+      connect(); // 尝试连接
+      return;
+    }
     state = state.copyWith(isJoiningRoom: true, error: null);
     final name =
         playerName.trim().isEmpty ? RandomNames(Zone.us).name() : playerName;
@@ -211,6 +270,15 @@ class OnlineGame extends _$OnlineGame {
 
       if (kDebugMode) {
         print('接收消息: ${message.type}');
+      }
+
+      // 任何成功从服务器收到的消息都意味着连接是活跃的，重置重连尝试
+      if (_reconnectAttempts > 0) {
+        if (kDebugMode) {
+          print('消息接收成功，重置重连尝试次数。');
+        }
+        _reconnectAttempts = 0;
+        _reconnectTimer?.cancel();
       }
 
       if (message.type == MessageType.ping) {
