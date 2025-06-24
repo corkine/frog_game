@@ -120,14 +120,14 @@ WS ws://server-domain/frog
 | `leaveRoom` | C→S | 无 `data` |
 | `gameMove` | C→S | `{'position': int, 'player': 'X'|'O', ...}` |
 | `gameReset` | C→S | 无 `data` |
-| `roomCreated` | S→C | `{'roomInfo': RoomInfo, 'gameState': GameState}` |
-| `roomJoined` | S→C | `{'roomInfo': RoomInfo, 'gameState': GameState}` |
-| `playerJoined` | S→C | `{'roomInfo': RoomInfo, 'gameState': GameState}` |
-| `playerLeft` | S→C | `{'roomInfo': RoomInfo, 'gameState': GameState}` |
-| `gameUpdate` | S→C | `{'roomInfo': RoomInfo, 'gameState': GameState}` |
-| `gameOver` | S→C | `{'roomInfo': RoomInfo, 'gameState': GameState}` |
-| `gameReset` | S→C | `{'roomInfo': RoomInfo, 'gameState': GameState}` |
-| `error` | S→C | `{'message': 'string'}` |
+| `roomCreated` | S→C | `{'roomInfo': RoomInfo}` |
+| `roomJoined` | S→C | `{'roomInfo': RoomInfo}` |
+| `playerJoined` | S→C | `{'roomInfo': RoomInfo}` |
+| `playerLeft` | S→C | `{'roomInfo': RoomInfo}` |
+| `gameUpdate` | S→C | `{'roomInfo': RoomInfo}` |
+| `gameOver` | S→C | `{'roomInfo': RoomInfo}` |
+| `gameReset` | S→C | `{'roomInfo': RoomInfo}` |
+| `error` | S→C | 无 `data`，错误信息在顶层 `error` 字段 |
 
 ### HTTP 端点
 

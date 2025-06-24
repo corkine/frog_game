@@ -112,7 +112,6 @@ class WebSocketManager {
         playerId: message.playerId,
         data: {
           'roomInfo': room.toRoomInfo().toJson(),
-          'gameState': room.gameState.toJson(),
         },
         timestamp: DateTime.now().millisecondsSinceEpoch,
       );
@@ -152,7 +151,6 @@ class WebSocketManager {
           playerId: message.playerId,
           data: {
             'roomInfo': room.toRoomInfo().toJson(),
-            'gameState': room.gameState.toJson(),
           },
           timestamp: DateTime.now().millisecondsSinceEpoch,
         );
@@ -165,7 +163,6 @@ class WebSocketManager {
           playerId: message.playerId,
           data: {
             'roomInfo': room.toRoomInfo().toJson(),
-            'gameState': room.gameState.toJson(),
           },
           timestamp: DateTime.now().millisecondsSinceEpoch,
         );
@@ -208,7 +205,6 @@ class WebSocketManager {
             playerId: playerId,
             data: {
               'roomInfo': room.toRoomInfo().toJson(),
-              'gameState': room.gameState.toJson(),
             },
             timestamp: DateTime.now().millisecondsSinceEpoch,
           ),
@@ -247,7 +243,6 @@ class WebSocketManager {
           playerId: message.playerId,
           data: {
             'roomInfo': room.toRoomInfo().toJson(),
-            'gameState': room.gameState.toJson(),
           },
           timestamp: DateTime.now().millisecondsSinceEpoch,
         );
@@ -260,7 +255,6 @@ class WebSocketManager {
             roomId: room.roomId,
             data: {
               'roomInfo': room.toRoomInfo().toJson(),
-              'gameState': room.gameState.toJson(),
             },
             timestamp: DateTime.now().millisecondsSinceEpoch,
           );
@@ -290,7 +284,6 @@ class WebSocketManager {
             roomId: room.roomId,
             data: {
               'roomInfo': room.toRoomInfo().toJson(),
-              'gameState': room.gameState.toJson(),
             },
             timestamp: DateTime.now().millisecondsSinceEpoch,
           ),
@@ -318,7 +311,6 @@ class WebSocketManager {
             playerId: playerId,
             data: {
               'roomInfo': room.toRoomInfo().toJson(),
-              'gameState': room.gameState.toJson(),
             },
             timestamp: DateTime.now().millisecondsSinceEpoch,
           ),

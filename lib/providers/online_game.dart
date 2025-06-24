@@ -331,13 +331,13 @@ class OnlineGame extends _$OnlineGame {
       case MessageType.gameMove:
       case MessageType.gameReset:
       case MessageType.gameOver:
-        final newGameState = GameState.fromJson(message.data!['gameState']);
-        final newRoomInfo = message.data?['roomInfo'] != null
-            ? RoomInfo.fromJson(message.data!['roomInfo'])
-            : state.roomInfo;
+        if (message.data == null || message.data!['roomInfo'] == null) {
+          return state;
+        }
+        final roomInfo = RoomInfo.fromJson(message.data!['roomInfo']);
         return state.copyWith(
-          gameState: newGameState,
-          roomInfo: newRoomInfo,
+          gameState: roomInfo.gameState ?? state.gameState,
+          roomInfo: roomInfo,
         );
 
       case MessageType.error:
