@@ -12,3 +12,6 @@ PRODUCT_BUNDLE_IDENTIFIER = com.example.frogGame
 
 // The copyright displayed in application information
 PRODUCT_COPYRIGHT = Copyright © 2025 com.example. All rights reserved.
+
+// The name of the app icon asset catalog to use for the application icon.
+ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon

@@ -104,7 +104,7 @@ dart run bin/server.dart
 
 ```bash
 # 客户端
-flutter build macos \
+flutter build/run macos/ios \
     --release \
     --dart-define=SERVER_URL=ws://your-custom-server.com/frog \
     --dart-define=APP_VERSION=v1.0.0
