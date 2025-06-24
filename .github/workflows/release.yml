@@ -51,7 +51,7 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update -y
-          sudo apt-get install -y ninja-build libgtk-3-dev
+          sudo apt-get install -y ninja-build libgtk-3-dev zip
 
       # Android-specific setup (on Linux runner)
       - name: Set up Java for Android
@@ -59,7 +59,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
-          java-version: '11'
+          java-version: '17'
 
       - name: Get Flutter dependencies
         run: flutter pub get
@@ -74,7 +74,7 @@ jobs:
       # Build Steps
       - name: Build Web
         if: runner.os == 'Linux'
-        run: flutter build web --release --dart-define=APP_VERSION=${{ github.ref_name }} --dart-define=SERVER_URL=${{ secrets.SERVER_URL }}
+        run: flutter build web --release --base-href=/frog/ --dart-define=APP_VERSION=${{ github.ref_name }} --dart-define=SERVER_URL=${{ secrets.SERVER_URL }}
 
       - name: Build Linux
         if: runner.os == 'Linux'
@@ -97,60 +97,59 @@ jobs:
         run: flutter build ios --release --no-codesign --dart-define=APP_VERSION=${{ github.ref_name }} --dart-define=SERVER_URL=${{ secrets.SERVER_URL }}
 
       # Packaging and Uploading Artifacts
-      - name: Package and Upload Web
+      - name: Package Web build
         if: runner.os == 'Linux'
-        uses: actions/upload-artifact@v4
-        with:
-          name: web-build
-          path: build/web
+        run: zip -r web-build.zip build/web
 
-      - name: Package and Upload Linux
+      - name: Package Linux build
         if: runner.os == 'Linux'
-        uses: actions/upload-artifact@v4
-        with:
-          name: linux-build
-          path: build/linux/x64/release/bundle
+        run: zip -r linux-build.zip build/linux/x64/release/bundle
 
-      - name: Package and Upload Android
-        if: runner.os == 'Linux'
-        uses: actions/upload-artifact@v4
-        with:
-          name: android-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
-
-      - name: Package and Upload Windows
+      - name: Package Windows build
         if: runner.os == 'Windows'
         shell: pwsh
-        run: |
-          Compress-Archive -Path build/windows/x64/runner/Release/* -DestinationPath build/windows/frog_game_windows.zip
+        run: Compress-Archive -Path build/windows/x64/runner/Release/* -DestinationPath windows-build.zip
           
-      - name: Upload Windows Artifact
-        if: runner.os == 'Windows'
-        uses: actions/upload-artifact@v4
-        with:
-            name: windows-build
-            path: build/windows/frog_game_windows.zip
-
-      - name: Package and Upload macOS
+      - name: Package macOS build
         if: runner.os == 'macOS'
-        run: |
-          ditto -c -k --sequesterRsrc --keepParent "build/macos/Build/Products/Release/frog_game.app" "frog_game_macos.zip"
+        run: ditto -c -k --sequesterRsrc --keepParent "build/macos/Build/Products/Release/frog_game.app" macos-build.zip
       
-      - name: Upload macOS Artifact
+      - name: Package iOS build
         if: runner.os == 'macOS'
+        run: ditto -c -k --sequesterRsrc --keepParent "build/ios/iphoneos/Runner.app" ios-build.zip
+      
+      - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-            name: macos-build
-            path: frog_game_macos.zip
+          name: build-artifacts-${{ runner.os }}
+          path: |
+            build/app/outputs/flutter-apk/app-release.apk
+            web-build.zip
+            linux-build.zip
+            windows-build.zip
+            macos-build.zip
+            ios-build.zip
+          if-no-files-found: ignore
 
-      - name: Package and Upload iOS
-        if: runner.os == 'macOS'
-        run: |
-          ditto -c -k --sequesterRsrc --keepParent "build/ios/iphoneos/Runner.app" "frog_game_ios.zip"
-          
-      - name: Upload iOS Artifact
-        if: runner.os == 'macOS'
-        uses: actions/upload-artifact@v4
+  create_release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: [build_and_push_server, build_cross_platform]
+    permissions:
+      contents: write # 需要权限来创建Release
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
         with:
-            name: ios-build
-            path: frog_game_ios.zip 
+          path: artifacts/
+      
+      - name: List downloaded files
+        run: ls -R artifacts
+
+      - name: Create Release and Upload Assets
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/**/*
+          body: "自动发布版本 ${{ github.ref_name }}"
+          prerelease: ${{ contains(github.ref, '-alpha') || contains(github.ref, '-beta') || contains(github.ref, '-rc') }} 
