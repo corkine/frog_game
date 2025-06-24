@@ -28,6 +28,10 @@ RUN dart compile exe bin/server.dart -o bin/server
 # 使用更小的基础镜像运行应用
 FROM debian:bullseye-slim
 
+# 再次声明 ARG 和 ENV 以便在运行时访问
+ARG APP_VERSION=local-dev
+ENV APP_VERSION=$APP_VERSION
+
 # 安装运行时依赖
 RUN apt-get update && \
     apt-get install -y ca-certificates && \
@@ -56,4 +60,4 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD curl -f http://localhost:8080/health || exit 1
 
 # 3. 运行服务器。此时，Dart代码可以通过 Platform.environment 读取到 ENV 设置的 APP_VERSION
-CMD ["dart", "run", "bin/server.dart"] 
+CMD ["/app/server"] 
