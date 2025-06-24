@@ -68,7 +68,7 @@ class _OnlineLobbyScreenState extends ConsumerState<OnlineLobbyScreen>
 
     // 检查是否已经在房间中，如果是则直接跳转到游戏屏幕
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (onlineState.roomInfo != null && onlineState.currentPlayer != null) {
+      if (onlineState.roomInfo != null && onlineState.myPlayerInfo != null) {
         // 避免在build过程中导航
         if (ModalRoute.of(context)?.isCurrent ?? false) {
           Navigator.of(context).pushReplacement(
@@ -83,7 +83,7 @@ class _OnlineLobbyScreenState extends ConsumerState<OnlineLobbyScreen>
       // 房间创建或加入成功，进入游戏
       if (previous?.roomInfo == null &&
           next.roomInfo != null &&
-          next.currentPlayer != null) {
+          next.myPlayerInfo != null) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (context) => const OnlineGameScreen()),
         );

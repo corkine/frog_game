@@ -57,10 +57,16 @@ class RoomManager {
       return RoomJoinResult.error('您已经在房间中');
     }
 
+    // 修复：动态决定玩家符号，而不是硬编码为 O
+    final existingSymbols = room.players.map((p) => p.playerSymbol).toSet();
+    final newPlayerSymbol = existingSymbols.contains(Player.x)
+        ? Player.o
+        : Player.x;
+
     final player = PlayerInfo(
       playerId: playerId,
       playerName: playerName,
-      playerSymbol: Player.o, // 加入者总是 O
+      playerSymbol: newPlayerSymbol,
       joinedAt: DateTime.now().millisecondsSinceEpoch,
     );
 

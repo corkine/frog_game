@@ -167,14 +167,25 @@ class _OnlineGameScreenState extends ConsumerState<OnlineGameScreen> {
   Widget _buildPlayersInfo(OnlineGameState state) {
     final players = state.roomInfo?.players ?? [];
 
+    // 根据玩家符号(X/O)查找玩家，而不是依赖列表顺序
+    PlayerInfo? playerX;
+    PlayerInfo? playerO;
+    for (final p in players) {
+      if (p.playerSymbol == Player.x) {
+        playerX = p;
+      } else if (p.playerSymbol == Player.o) {
+        playerO = p;
+      }
+    }
+
     return Row(
       children: [
         // 玩家1 (X)
         Expanded(
           child: _buildPlayerCard(
-            players.isNotEmpty ? players[0] : null,
+            playerX,
             Player.x,
-            state.currentPlayer?.playerId,
+            state.myPlayerInfo?.playerId,
           ),
         ),
 
@@ -184,7 +195,7 @@ class _OnlineGameScreenState extends ConsumerState<OnlineGameScreen> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.2),
+            color: Colors.white.withOpacity(0.2),
             borderRadius: BorderRadius.circular(8),
           ),
           child: const Text(
@@ -202,9 +213,9 @@ class _OnlineGameScreenState extends ConsumerState<OnlineGameScreen> {
         // 玩家2 (O)
         Expanded(
           child: _buildPlayerCard(
-            players.length > 1 ? players[1] : null,
+            playerO,
             Player.o,
-            state.currentPlayer?.playerId,
+            state.myPlayerInfo?.playerId,
           ),
         ),
       ],

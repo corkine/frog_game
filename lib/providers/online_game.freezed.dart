@@ -21,7 +21,7 @@ mixin _$OnlineGameState {
   ConnectionStatus get connectionStatus => throw _privateConstructorUsedError;
   RoomInfo? get roomInfo => throw _privateConstructorUsedError;
   String? get error => throw _privateConstructorUsedError;
-  PlayerInfo? get currentPlayer => throw _privateConstructorUsedError;
+  PlayerInfo? get myPlayerInfo => throw _privateConstructorUsedError;
   Player? get mySymbol => throw _privateConstructorUsedError;
   bool get isJoiningRoom => throw _privateConstructorUsedError;
 
@@ -44,14 +44,14 @@ abstract class $OnlineGameStateCopyWith<$Res> {
     ConnectionStatus connectionStatus,
     RoomInfo? roomInfo,
     String? error,
-    PlayerInfo? currentPlayer,
+    PlayerInfo? myPlayerInfo,
     Player? mySymbol,
     bool isJoiningRoom,
   });
 
   $GameStateCopyWith<$Res> get gameState;
   $RoomInfoCopyWith<$Res>? get roomInfo;
-  $PlayerInfoCopyWith<$Res>? get currentPlayer;
+  $PlayerInfoCopyWith<$Res>? get myPlayerInfo;
 }
 
 /// @nodoc
@@ -73,7 +73,7 @@ class _$OnlineGameStateCopyWithImpl<$Res, $Val extends OnlineGameState>
     Object? connectionStatus = null,
     Object? roomInfo = freezed,
     Object? error = freezed,
-    Object? currentPlayer = freezed,
+    Object? myPlayerInfo = freezed,
     Object? mySymbol = freezed,
     Object? isJoiningRoom = null,
   }) {
@@ -95,9 +95,9 @@ class _$OnlineGameStateCopyWithImpl<$Res, $Val extends OnlineGameState>
                 ? _value.error
                 : error // ignore: cast_nullable_to_non_nullable
                       as String?,
-            currentPlayer: freezed == currentPlayer
-                ? _value.currentPlayer
-                : currentPlayer // ignore: cast_nullable_to_non_nullable
+            myPlayerInfo: freezed == myPlayerInfo
+                ? _value.myPlayerInfo
+                : myPlayerInfo // ignore: cast_nullable_to_non_nullable
                       as PlayerInfo?,
             mySymbol: freezed == mySymbol
                 ? _value.mySymbol
@@ -140,13 +140,13 @@ class _$OnlineGameStateCopyWithImpl<$Res, $Val extends OnlineGameState>
   /// with the given fields replaced by the non-null parameter values.
   @override
   @pragma('vm:prefer-inline')
-  $PlayerInfoCopyWith<$Res>? get currentPlayer {
-    if (_value.currentPlayer == null) {
+  $PlayerInfoCopyWith<$Res>? get myPlayerInfo {
+    if (_value.myPlayerInfo == null) {
       return null;
     }
 
-    return $PlayerInfoCopyWith<$Res>(_value.currentPlayer!, (value) {
-      return _then(_value.copyWith(currentPlayer: value) as $Val);
+    return $PlayerInfoCopyWith<$Res>(_value.myPlayerInfo!, (value) {
+      return _then(_value.copyWith(myPlayerInfo: value) as $Val);
     });
   }
 }
@@ -165,7 +165,7 @@ abstract class _$$OnlineGameStateImplCopyWith<$Res>
     ConnectionStatus connectionStatus,
     RoomInfo? roomInfo,
     String? error,
-    PlayerInfo? currentPlayer,
+    PlayerInfo? myPlayerInfo,
     Player? mySymbol,
     bool isJoiningRoom,
   });
@@ -175,7 +175,7 @@ abstract class _$$OnlineGameStateImplCopyWith<$Res>
   @override
   $RoomInfoCopyWith<$Res>? get roomInfo;
   @override
-  $PlayerInfoCopyWith<$Res>? get currentPlayer;
+  $PlayerInfoCopyWith<$Res>? get myPlayerInfo;
 }
 
 /// @nodoc
@@ -196,7 +196,7 @@ class __$$OnlineGameStateImplCopyWithImpl<$Res>
     Object? connectionStatus = null,
     Object? roomInfo = freezed,
     Object? error = freezed,
-    Object? currentPlayer = freezed,
+    Object? myPlayerInfo = freezed,
     Object? mySymbol = freezed,
     Object? isJoiningRoom = null,
   }) {
@@ -218,9 +218,9 @@ class __$$OnlineGameStateImplCopyWithImpl<$Res>
             ? _value.error
             : error // ignore: cast_nullable_to_non_nullable
                   as String?,
-        currentPlayer: freezed == currentPlayer
-            ? _value.currentPlayer
-            : currentPlayer // ignore: cast_nullable_to_non_nullable
+        myPlayerInfo: freezed == myPlayerInfo
+            ? _value.myPlayerInfo
+            : myPlayerInfo // ignore: cast_nullable_to_non_nullable
                   as PlayerInfo?,
         mySymbol: freezed == mySymbol
             ? _value.mySymbol
@@ -244,7 +244,7 @@ class _$OnlineGameStateImpl extends _OnlineGameState
     this.connectionStatus = ConnectionStatus.initial,
     this.roomInfo,
     this.error,
-    this.currentPlayer,
+    this.myPlayerInfo,
     this.mySymbol,
     this.isJoiningRoom = false,
   }) : super._();
@@ -260,7 +260,7 @@ class _$OnlineGameStateImpl extends _OnlineGameState
   @override
   final String? error;
   @override
-  final PlayerInfo? currentPlayer;
+  final PlayerInfo? myPlayerInfo;
   @override
   final Player? mySymbol;
   @override
@@ -269,7 +269,7 @@ class _$OnlineGameStateImpl extends _OnlineGameState
 
   @override
   String toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) {
-    return 'OnlineGameState(gameState: $gameState, connectionStatus: $connectionStatus, roomInfo: $roomInfo, error: $error, currentPlayer: $currentPlayer, mySymbol: $mySymbol, isJoiningRoom: $isJoiningRoom)';
+    return 'OnlineGameState(gameState: $gameState, connectionStatus: $connectionStatus, roomInfo: $roomInfo, error: $error, myPlayerInfo: $myPlayerInfo, mySymbol: $mySymbol, isJoiningRoom: $isJoiningRoom)';
   }
 
   @override
@@ -281,7 +281,7 @@ class _$OnlineGameStateImpl extends _OnlineGameState
       ..add(DiagnosticsProperty('connectionStatus', connectionStatus))
       ..add(DiagnosticsProperty('roomInfo', roomInfo))
       ..add(DiagnosticsProperty('error', error))
-      ..add(DiagnosticsProperty('currentPlayer', currentPlayer))
+      ..add(DiagnosticsProperty('myPlayerInfo', myPlayerInfo))
       ..add(DiagnosticsProperty('mySymbol', mySymbol))
       ..add(DiagnosticsProperty('isJoiningRoom', isJoiningRoom));
   }
@@ -298,8 +298,8 @@ class _$OnlineGameStateImpl extends _OnlineGameState
             (identical(other.roomInfo, roomInfo) ||
                 other.roomInfo == roomInfo) &&
             (identical(other.error, error) || other.error == error) &&
-            (identical(other.currentPlayer, currentPlayer) ||
-                other.currentPlayer == currentPlayer) &&
+            (identical(other.myPlayerInfo, myPlayerInfo) ||
+                other.myPlayerInfo == myPlayerInfo) &&
             (identical(other.mySymbol, mySymbol) ||
                 other.mySymbol == mySymbol) &&
             (identical(other.isJoiningRoom, isJoiningRoom) ||
@@ -313,7 +313,7 @@ class _$OnlineGameStateImpl extends _OnlineGameState
     connectionStatus,
     roomInfo,
     error,
-    currentPlayer,
+    myPlayerInfo,
     mySymbol,
     isJoiningRoom,
   );
@@ -336,7 +336,7 @@ abstract class _OnlineGameState extends OnlineGameState {
     final ConnectionStatus connectionStatus,
     final RoomInfo? roomInfo,
     final String? error,
-    final PlayerInfo? currentPlayer,
+    final PlayerInfo? myPlayerInfo,
     final Player? mySymbol,
     final bool isJoiningRoom,
   }) = _$OnlineGameStateImpl;
@@ -351,7 +351,7 @@ abstract class _OnlineGameState extends OnlineGameState {
   @override
   String? get error;
   @override
-  PlayerInfo? get currentPlayer;
+  PlayerInfo? get myPlayerInfo;
   @override
   Player? get mySymbol;
   @override

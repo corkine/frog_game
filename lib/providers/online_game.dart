@@ -16,12 +16,7 @@ part 'online_game.freezed.dart';
 part 'online_game.g.dart';
 
 /// 连接状态的枚举
-enum ConnectionStatus {
-  initial,
-  connecting,
-  connected,
-  disconnected,
-}
+enum ConnectionStatus { initial, connecting, connected, disconnected }
 
 /// 在线游戏的整体状态，使用Freezed进行状态管理
 @freezed
@@ -31,7 +26,7 @@ class OnlineGameState with _$OnlineGameState {
     @Default(ConnectionStatus.initial) ConnectionStatus connectionStatus,
     RoomInfo? roomInfo,
     String? error,
-    PlayerInfo? currentPlayer,
+    PlayerInfo? myPlayerInfo,
     Player? mySymbol,
     @Default(false) bool isJoiningRoom,
   }) = _OnlineGameState;
@@ -75,8 +70,10 @@ class OnlineGame extends _$OnlineGame {
   String _generatePlayerId() {
     final random = Random();
     const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
-    return List.generate(12, (index) => chars[random.nextInt(chars.length)])
-        .join();
+    return List.generate(
+      12,
+      (index) => chars[random.nextInt(chars.length)],
+    ).join();
   }
 
   /// 连接到服务器
@@ -90,7 +87,9 @@ class OnlineGame extends _$OnlineGame {
     if (_isDisposed) return;
 
     state = state.copyWith(
-        connectionStatus: ConnectionStatus.connecting, error: null);
+      connectionStatus: ConnectionStatus.connecting,
+      error: null,
+    );
     _playerId ??= _generatePlayerId();
 
     final stream = await _webSocketService.connect(
@@ -172,7 +171,8 @@ class OnlineGame extends _$OnlineGame {
     _socketSubscription = null;
     if (!_isDisposed) {
       state = const OnlineGameState(
-          connectionStatus: ConnectionStatus.disconnected);
+        connectionStatus: ConnectionStatus.disconnected,
+      );
     }
   }
 
@@ -193,8 +193,9 @@ class OnlineGame extends _$OnlineGame {
       connect(); // 尝试连接
       return;
     }
-    final name =
-        playerName.trim().isEmpty ? RandomNames(Zone.us).name() : playerName;
+    final name = playerName.trim().isEmpty
+        ? RandomNames(Zone.us).name()
+        : playerName;
     _sendMessage(MessageType.createRoom, data: {'playerName': name});
   }
 
@@ -205,10 +206,14 @@ class OnlineGame extends _$OnlineGame {
       return;
     }
     state = state.copyWith(isJoiningRoom: true, error: null);
-    final name =
-        playerName.trim().isEmpty ? RandomNames(Zone.us).name() : playerName;
-    _sendMessage(MessageType.joinRoom,
-        roomId: roomId, data: {'playerName': name});
+    final name = playerName.trim().isEmpty
+        ? RandomNames(Zone.us).name()
+        : playerName;
+    _sendMessage(
+      MessageType.joinRoom,
+      roomId: roomId,
+      data: {'playerName': name},
+    );
 
     // 超时处理
     Timer(const Duration(seconds: 10), () {
@@ -236,8 +241,11 @@ class OnlineGame extends _$OnlineGame {
       playerId: _playerId!,
       timestamp: DateTime.now().millisecondsSinceEpoch,
     );
-    _sendMessage(MessageType.gameMove,
-        roomId: state.roomInfo!.roomId, data: moveData.toJson());
+    _sendMessage(
+      MessageType.gameMove,
+      roomId: state.roomInfo!.roomId,
+      data: moveData.toJson(),
+    );
   }
 
   void resetGame() {
@@ -251,17 +259,23 @@ class OnlineGame extends _$OnlineGame {
 
   // --- 消息处理 ---
 
-  void _sendMessage(MessageType type,
-      {String? roomId, Map<String, dynamic>? data}) {
+  void _sendMessage(
+    MessageType type, {
+    String? roomId,
+    Map<String, dynamic>? data,
+  }) {
     if (_playerId == null ||
-        state.connectionStatus != ConnectionStatus.connected) return;
-    _webSocketService.sendMessage(NetworkMessage(
-      type: type,
-      playerId: _playerId!,
-      roomId: roomId,
-      data: data,
-      timestamp: DateTime.now().millisecondsSinceEpoch,
-    ));
+        state.connectionStatus != ConnectionStatus.connected)
+      return;
+    _webSocketService.sendMessage(
+      NetworkMessage(
+        type: type,
+        playerId: _playerId!,
+        roomId: roomId,
+        data: data,
+        timestamp: DateTime.now().millisecondsSinceEpoch,
+      ),
+    );
   }
 
   void _handleRawMessage(dynamic data) {
@@ -285,7 +299,7 @@ class OnlineGame extends _$OnlineGame {
         _sendMessage(MessageType.pong);
         return;
       }
-      
+
       state = _getNextState(message);
     } catch (e, stackTrace) {
       if (kDebugMode) {
@@ -300,11 +314,13 @@ class OnlineGame extends _$OnlineGame {
       case MessageType.roomCreated:
       case MessageType.roomJoined:
         final roomInfo = RoomInfo.fromJson(message.data!['roomInfo']);
-        final me = roomInfo.players.firstWhere((p) => p.playerId == _playerId,
-            orElse: () => throw Exception("Could not find myself in player list"));
+        final me = roomInfo.players.firstWhere(
+          (p) => p.playerId == _playerId,
+          orElse: () => throw Exception("Could not find myself in player list"),
+        );
         return state.copyWith(
           roomInfo: roomInfo,
-          currentPlayer: me,
+          myPlayerInfo: me,
           mySymbol: me.playerSymbol,
           isJoiningRoom: false,
           error: null,
@@ -314,7 +330,7 @@ class OnlineGame extends _$OnlineGame {
       case MessageType.roomLeft:
         return state.copyWith(
           roomInfo: null,
-          currentPlayer: null,
+          myPlayerInfo: null,
           mySymbol: null,
           gameState: const GameState(),
         );
@@ -343,10 +359,7 @@ class OnlineGame extends _$OnlineGame {
       case MessageType.error:
         final errorMessage =
             message.error ?? message.data?['message'] ?? '来自服务器的未知错误';
-        return state.copyWith(
-          error: errorMessage,
-          isJoiningRoom: false,
-        );
+        return state.copyWith(error: errorMessage, isJoiningRoom: false);
 
       default:
         return state;
