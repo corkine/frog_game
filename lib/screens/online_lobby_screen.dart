@@ -136,10 +136,10 @@ class _OnlineLobbyScreenState extends ConsumerState<OnlineLobbyScreen>
 
                             // 房间操作
                             _buildCreateRoomSection(),
-                            const SizedBox(height: 10),
+                            const SizedBox(height: 20),
                             _buildJoinRoomSection(),
 
-                            const SizedBox(height: 30),
+                            const SizedBox(height: 20),
                             // 返回按钮
                             _buildBackButton(),
                           ],
