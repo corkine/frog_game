@@ -4,6 +4,7 @@ import '../providers/game.dart';
 import '../config/app_config.dart';
 import 'game_screen.dart';
 import 'online_lobby_screen.dart';
+import 'army_chess_welcome_screen.dart';
 
 class WelcomeScreen extends ConsumerWidget {
   const WelcomeScreen({super.key});
@@ -16,6 +17,51 @@ class WelcomeScreen extends ConsumerWidget {
           // 背景
           Positioned.fill(
             child: Image.asset("images/background.jpg", fit: BoxFit.cover),
+          ),
+
+          // 右上角军棋入口
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 8,
+            right: 16,
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const ArmyChessWelcomeScreen(),
+                  ),
+                ),
+                borderRadius: BorderRadius.circular(20),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.brown.withValues(alpha: 0.8),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.3),
+                    ),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text('🎖️', style: TextStyle(fontSize: 16)),
+                      SizedBox(width: 4),
+                      Text(
+                        '军棋',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
           ),
 
           // 内容
